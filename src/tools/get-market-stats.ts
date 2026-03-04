@@ -5,6 +5,7 @@
 
 import { z } from "zod";
 import { queryTable, queryView } from "../supabase.js";
+import { freeTierNote } from "../auth.js";
 import type { Tier, SummaryStatRow } from "../types.js";
 
 export const getMarketStatsSchema = {
@@ -96,12 +97,16 @@ export async function handleGetMarketStats(
       "Vendor-level breakdown requires ATOM MCP Pro ($49/mo). Visit https://a7om.com/mcp";
   }
 
-  return {
-    content: [
-      {
-        type: "text" as const,
-        text: JSON.stringify(response, null, 2),
-      },
-    ],
-  };
+  const content: { type: "text"; text: string }[] = [
+    {
+      type: "text" as const,
+      text: JSON.stringify(response, null, 2),
+    },
+  ];
+
+  if (tier === "free") {
+    content.push(freeTierNote("Vendor-level breakdown and granular market segmentation"));
+  }
+
+  return { content };
 }

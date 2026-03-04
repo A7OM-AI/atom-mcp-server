@@ -5,7 +5,7 @@
 
 import { z } from "zod";
 import { queryTable } from "../supabase.js";
-import { gateResults } from "../auth.js";
+import { gateResults, freeTierNote } from "../auth.js";
 import type { Tier, SkuIndex } from "../types.js";
 
 export const comparePricesSchema = {
@@ -146,26 +146,30 @@ export async function handleComparePrices(
     };
   }
 
-  return {
-    content: [
-      {
-        type: "text" as const,
-        text: JSON.stringify(
-          {
-            tool: "compare_prices",
-            tier,
-            query: {
-              model_name: params.model_name,
-              model_family: params.model_family,
-              direction: params.direction,
-              modality: params.modality,
-            },
-            results,
+  const content: { type: "text"; text: string }[] = [
+    {
+      type: "text" as const,
+      text: JSON.stringify(
+        {
+          tool: "compare_prices",
+          tier,
+          query: {
+            model_name: params.model_name,
+            model_family: params.model_family,
+            direction: params.direction,
+            modality: params.modality,
           },
-          null,
-          2
-        ),
-      },
-    ],
-  };
+          results,
+        },
+        null,
+        2
+      ),
+    },
+  ];
+
+  if (tier === "free") {
+    content.push(freeTierNote("Full vendor-by-vendor price comparison"));
+  }
+
+  return { content };
 }

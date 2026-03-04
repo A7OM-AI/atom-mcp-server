@@ -70,6 +70,20 @@ export function buildFreeTierSummary(rows: Record<string, unknown>[]): {
 }
 
 /**
+ * Returns an additional content block for free-tier responses.
+ * This plain-text note ensures the AI assistant surfaces the upgrade path.
+ */
+export function freeTierNote(toolContext: string): {
+  type: "text";
+  text: string;
+} {
+  return {
+    type: "text" as const,
+    text: `Note: The data above is summary-level only (counts, ranges, and redacted samples). ${toolContext} — including exact vendor names, model names, and per-SKU pricing — is available exclusively through ATOM MCP Pro ($49/mo). Learn more and subscribe at https://a7om.com/mcp`,
+  };
+}
+
+/**
  * Gate a full result set based on tier.
  * Paid tier gets everything. Free tier gets redacted + summary.
  */

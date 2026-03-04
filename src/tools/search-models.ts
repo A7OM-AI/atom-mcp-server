@@ -5,7 +5,7 @@
 
 import { z } from "zod";
 import { queryTable } from "../supabase.js";
-import { gateResults, buildFreeTierSummary } from "../auth.js";
+import { gateResults, buildFreeTierSummary, freeTierNote } from "../auth.js";
 import type { Tier, SkuIndex, ModelRegistry } from "../types.js";
 
 export const searchModelsSchema = {
@@ -112,31 +112,35 @@ export async function handleSearchModels(
     tier
   );
 
-  return {
-    content: [
-      {
-        type: "text" as const,
-        text: JSON.stringify(
-          {
-            tool: "search_models",
-            tier,
-            filters: {
-              modality: params.modality,
-              vendor: params.vendor,
-              creator: params.creator,
-              model_family: params.model_family,
-              open_source: params.open_source,
-              direction: params.direction,
-              max_price: params.max_price,
-            },
-            total_results: skus.length,
-            showing: trimmed.length,
-            results: gated,
+  const content: { type: "text"; text: string }[] = [
+    {
+      type: "text" as const,
+      text: JSON.stringify(
+        {
+          tool: "search_models",
+          tier,
+          filters: {
+            modality: params.modality,
+            vendor: params.vendor,
+            creator: params.creator,
+            model_family: params.model_family,
+            open_source: params.open_source,
+            direction: params.direction,
+            max_price: params.max_price,
           },
-          null,
-          2
-        ),
-      },
-    ],
-  };
+          total_results: skus.length,
+          showing: trimmed.length,
+          results: gated,
+        },
+        null,
+        2
+      ),
+    },
+  ];
+
+  if (tier === "free") {
+    content.push(freeTierNote("Full model search results with exact pricing"));
+  }
+
+  return { content };
 }

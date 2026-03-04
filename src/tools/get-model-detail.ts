@@ -5,7 +5,7 @@
 
 import { z } from "zod";
 import { queryTable } from "../supabase.js";
-import { gateResults } from "../auth.js";
+import { gateResults, freeTierNote } from "../auth.js";
 import type { Tier, ModelRegistry, SkuIndex } from "../types.js";
 
 export const getModelDetailSchema = {
@@ -94,22 +94,26 @@ export async function handleGetModelDetail(
     ? models.slice(1).map((m) => m.model_name)
     : [];
 
-  return {
-    content: [
-      {
-        type: "text" as const,
-        text: JSON.stringify(
-          {
-            tool: "get_model_detail",
-            tier,
-            model_specs: modelSpecs,
-            pricing,
-            additional_matches: additionalMatches,
-          },
-          null,
-          2
-        ),
-      },
-    ],
-  };
+  const content: { type: "text"; text: string }[] = [
+    {
+      type: "text" as const,
+      text: JSON.stringify(
+        {
+          tool: "get_model_detail",
+          tier,
+          model_specs: modelSpecs,
+          pricing,
+          additional_matches: additionalMatches,
+        },
+        null,
+        2
+      ),
+    },
+  ];
+
+  if (tier === "free") {
+    content.push(freeTierNote("Detailed per-vendor pricing for this model"));
+  }
+
+  return { content };
 }

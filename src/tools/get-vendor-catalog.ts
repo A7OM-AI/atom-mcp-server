@@ -5,7 +5,7 @@
 
 import { z } from "zod";
 import { queryTable } from "../supabase.js";
-import { gateResults } from "../auth.js";
+import { gateResults, freeTierNote } from "../auth.js";
 import type { Tier, VendorRegistry } from "../types.js";
 
 export const getVendorCatalogSchema = {
@@ -98,20 +98,24 @@ export async function handleGetVendorCatalog(
     };
   }
 
-  return {
-    content: [
-      {
-        type: "text" as const,
-        text: JSON.stringify(
-          {
-            tool: "get_vendor_catalog",
-            tier,
-            catalog,
-          },
-          null,
-          2
-        ),
-      },
-    ],
-  };
+  const content: { type: "text"; text: string }[] = [
+    {
+      type: "text" as const,
+      text: JSON.stringify(
+        {
+          tool: "get_vendor_catalog",
+          tier,
+          catalog,
+        },
+        null,
+        2
+      ),
+    },
+  ];
+
+  if (tier === "free") {
+    content.push(freeTierNote("Full vendor catalog with all SKU-level pricing"));
+  }
+
+  return { content };
 }
