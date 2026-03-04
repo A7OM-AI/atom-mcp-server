@@ -94,7 +94,7 @@ export async function handleGetVendorCatalog(
       summary: catalogSummary,
       sample: gateResults(skus.slice(0, 3), "free"),
       upgrade_message:
-        "Full catalog with pricing requires ATOM MCP subscription ($49/mo). Visit https://a7om.com/pricing",
+        "Full catalog with pricing requires ATOM MCP Pro ($49/mo). Visit https://a7om.com/mcp",
     };
   }
 

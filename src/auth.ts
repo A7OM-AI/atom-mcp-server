@@ -27,7 +27,7 @@ export function redactForFreeTier(
   rows: Record<string, unknown>[],
   fieldsToRedact: string[] = ["vendor_name", "model_name", "normalized_price"]
 ): Record<string, unknown>[] {
-  const REDACTED = "[UPGRADE TO ATOM MCP — $49/mo]";
+  const REDACTED = "[UPGRADE TO ATOM MCP Pro — $49/mo]";
   return rows.map((row) => {
     const redacted = { ...row };
     for (const field of fieldsToRedact) {
@@ -65,7 +65,7 @@ export function buildFreeTierSummary(rows: Record<string, unknown>[]): {
     modalities,
     directions,
     upgrade_message:
-      "Full vendor, model, and pricing details require an ATOM MCP subscription ($49/mo). Visit https://a7om.com/pricing",
+      "Full vendor, model, and pricing details require an ATOM MCP Pro ($49/mo). Visit https://a7om.com/mcp",
   };
 }
 

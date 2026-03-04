@@ -134,9 +134,9 @@ export interface RedactedModel {
   modality: string;
   direction: string;
   // Redacted fields
-  vendor_name: "[UPGRADE TO ATOM MCP — $49/mo]";
-  model_name: "[UPGRADE TO ATOM MCP — $49/mo]";
-  normalized_price: "[UPGRADE TO ATOM MCP — $49/mo]";
+  vendor_name: "[UPGRADE TO ATOM MCP Pro — $49/mo]";
+  model_name: "[UPGRADE TO ATOM MCP Pro — $49/mo]";
+  normalized_price: "[UPGRADE TO ATOM MCP Pro — $49/mo]";
 }
 
 export interface ToolContext {

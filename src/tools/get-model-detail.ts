@@ -85,7 +85,7 @@ export async function handleGetModelDetail(
         "free"
       ),
       upgrade_message:
-        "Full vendor-by-vendor pricing requires ATOM MCP subscription ($49/mo). Visit https://a7om.com/pricing",
+        "Full vendor-by-vendor pricing requires ATOM MCP Pro ($49/mo). Visit https://a7om.com/mcp",
     };
   }
 

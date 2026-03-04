@@ -93,7 +93,7 @@ export async function handleGetMarketStats(
   } else {
     response.vendor_count = Object.keys(vendorCounts).length;
     response.upgrade_message =
-      "Vendor-level breakdown requires ATOM MCP subscription ($49/mo). Visit https://a7om.com/pricing";
+      "Vendor-level breakdown requires ATOM MCP Pro ($49/mo). Visit https://a7om.com/mcp";
   }
 
   return {
