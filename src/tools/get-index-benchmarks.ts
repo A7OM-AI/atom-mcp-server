@@ -35,8 +35,13 @@ export async function handleGetIndexBenchmarks(
 ) {
   // Index benchmarks are fully public — no tier gating
   const filters: string[] = [];
-  if (params.index_code) filters.push(`index_code=eq.${params.index_code}`);
-  if (params.index_category)
+  if (params.index_code && params.index_code.trim() !== "")
+    filters.push(`index_code=eq.${params.index_code.trim()}`);
+  if (
+    params.index_category &&
+    params.index_category.trim() !== "" &&
+    params.index_category !== "(any)"
+  )
     filters.push(`index_category=ilike.*${params.index_category}*`);
 
   const rows = await queryTable<IndexValues>("index_values", filters, {
