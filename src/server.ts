@@ -16,7 +16,7 @@ import { getModelDetailSchema, handleGetModelDetail } from "./tools/get-model-de
 import { comparePricesSchema, handleComparePrices } from "./tools/compare-prices.js";
 import { getVendorCatalogSchema, handleGetVendorCatalog } from "./tools/get-vendor-catalog.js";
 import { getMarketStatsSchema, handleGetMarketStats } from "./tools/get-market-stats.js";
-import { getPriceHistorySchema, handleGetPriceHistory } from "./tools/get-price-history.js";
+import { getIndexBenchmarksSchema, handleGetIndexBenchmarks } from "./tools/get-index-benchmarks.js";
 import { getKpisSchema, handleGetKpis } from "./tools/get-kpis.js";
 import { listVendorsSchema, handleListVendors } from "./tools/list-vendors.js";
 
@@ -181,21 +181,25 @@ Examples:
   );
 
   // ----------------------------------------------------------
-  // 6. get_price_history
+  // 6. get_index_benchmarks
   // ----------------------------------------------------------
   server.registerTool(
-    "get_price_history",
+    "get_index_benchmarks",
     {
-      title: "Get Price History",
-      description: `Historical pricing time series for a model.
+      title: "Get AIPI Index Benchmarks",
+      description: `AIPI (ATOM Inference Price Index) — chained matched-model price benchmarks for AI inference.
 
-Shows how a model's pricing has changed over time across weekly AIPI index runs. Essential for trend analysis and detecting price movements.
+Returns benchmark prices across index families (Text, Image, Audio, Video, Multimodal, Composite) with input, cached, and output pricing per period.
+
+These are market-wide benchmarks, not individual vendor prices. Use them to understand where the market is and how it's moving.
+
+Fully public — available to all tiers.
 
 Examples:
-  - "GPT-4o pricing trend over last 12 weeks" → model_name="GPT-4o"
-  - "Claude pricing history on AWS" → model_name="Claude", vendor="Amazon Bedrock"
-  - "Llama 3.1 output price trend" → model_name="Llama 3.1", direction="Output"`,
-      inputSchema: { ...getPriceHistorySchema, ...apiKeyField },
+  - "What's the current benchmark for text inference?" → index_category="Text"
+  - "Show me all AIPI indexes" → (no params)
+  - "AIPI-TXT-GLB history" → index_code="AIPI-TXT-GLB"`,
+      inputSchema: { ...getIndexBenchmarksSchema, ...apiKeyField },
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -205,7 +209,7 @@ Examples:
     },
     async (params) => {
       const tier = resolveTier(params._atom_api_key);
-      return handleGetPriceHistory(params, tier);
+      return handleGetIndexBenchmarks(params, tier);
     }
   );
 
