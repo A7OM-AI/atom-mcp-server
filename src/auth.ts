@@ -2,7 +2,7 @@
 // ATOM MCP Server — Authentication & Tier Gating
 // ============================================================
 
-import type { Tier, SkuIndex, RedactedModel } from "./types.js";
+import type { Tier } from "./types.js";
 
 // Valid API keys are loaded from environment.
 // In production, these would be validated against a database.
@@ -32,7 +32,7 @@ export function redactForFreeTier(
     const redacted = { ...row };
     for (const field of fieldsToRedact) {
       if (field in redacted) {
-        (redacted as Record<string, unknown>)[field] = REDACTED;
+        redacted[field] = REDACTED;
       }
     }
     return redacted;
@@ -42,26 +42,25 @@ export function redactForFreeTier(
 /**
  * Build a free-tier summary: count + price range (no individual records).
  */
-export function buildFreeTierSummary(rows: SkuIndex[]): {
+export function buildFreeTierSummary(rows: Record<string, unknown>[]): {
   total_results: number;
-  price_range: { min: number | null; max: number | null; currency: string };
+  price_range: { min: number | null; max: number | null };
   modalities: string[];
   directions: string[];
   upgrade_message: string;
 } {
   const prices = rows
-    .map((r) => r.normalized_price)
+    .map((r) => r.normalized_price as number)
     .filter((p): p is number => p !== null && p > 0);
 
-  const modalities = [...new Set(rows.map((r) => r.modality))];
-  const directions = [...new Set(rows.map((r) => r.direction))];
+  const modalities = [...new Set(rows.map((r) => r.modality as string).filter(Boolean))];
+  const directions = [...new Set(rows.map((r) => r.direction as string).filter(Boolean))];
 
   return {
     total_results: rows.length,
     price_range: {
       min: prices.length > 0 ? Math.min(...prices) : null,
       max: prices.length > 0 ? Math.max(...prices) : null,
-      currency: "USD",
     },
     modalities,
     directions,
@@ -75,17 +74,14 @@ export function buildFreeTierSummary(rows: SkuIndex[]): {
  * Paid tier gets everything. Free tier gets redacted + summary.
  */
 export function gateResults(
-  rows: SkuIndex[],
+  rows: Record<string, unknown>[],
   tier: Tier
-): { data: unknown; tier: Tier } {
+): unknown {
   if (tier === "paid") {
-    return { data: rows, tier };
+    return rows;
   }
   return {
-    data: {
-      summary: buildFreeTierSummary(rows),
-      sample: redactForFreeTier(rows.slice(0, 5) as unknown as Record<string, unknown>[]),
-    },
-    tier,
+    summary: buildFreeTierSummary(rows),
+    sample: redactForFreeTier(rows.slice(0, 5)),
   };
 }

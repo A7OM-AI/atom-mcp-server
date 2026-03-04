@@ -5,7 +5,7 @@
 
 import { z } from "zod";
 import { queryTable, queryView } from "../supabase.js";
-import type { Tier, SummaryStats } from "../types.js";
+import type { Tier, SummaryStatRow } from "../types.js";
 
 export const getMarketStatsSchema = {
   modality: z
@@ -18,8 +18,14 @@ export async function handleGetMarketStats(
   params: z.infer<z.ZodObject<typeof getMarketStatsSchema>>,
   tier: Tier
 ) {
-  // Get summary stats from view
-  const stats = await queryView<SummaryStats>("v_summary_stats");
+  // Get summary stats from view — returns rows of {metric, value}
+  const statRows = await queryView<SummaryStatRow>("v_summary_stats");
+
+  // Convert to a lookup object
+  const coverage: Record<string, string> = {};
+  for (const row of statRows) {
+    coverage[row.metric] = row.value;
+  }
 
   // Get price distribution for the requested modality
   const priceFilters: string[] = [];
@@ -66,7 +72,7 @@ export async function handleGetMarketStats(
   const response: Record<string, unknown> = {
     tool: "get_market_stats",
     tier,
-    coverage: stats.length > 0 ? stats[0] : null,
+    coverage,
     price_distribution: {
       modality_filter: params.modality || "All",
       total_skus: prices.length,

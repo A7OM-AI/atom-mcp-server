@@ -55,24 +55,48 @@ export async function handleGetVendorCatalog(
   const vendor = vendors[0];
 
   // Get all SKUs for this vendor
-  const filters: string[] = [`vendor_id=eq.${vendor.vendor_id}`];
-  if (params.modality) filters.push(`modality=ilike.*${params.modality}*`);
-  if (params.direction) filters.push(`direction=eq.${params.direction}`);
+  const skuFilters: string[] = [
+    `vendor_name=ilike.*${params.vendor}*`,
+  ];
+  if (params.modality) skuFilters.push(`modality=ilike.*${params.modality}*`);
+  if (params.direction) skuFilters.push(`direction=eq.${params.direction}`);
 
-  const skus = await queryTable<Record<string, unknown>>("sku_index", filters, {
-    order: "modality.asc,model_name.asc,direction.asc",
+  const skus = await queryTable<Record<string, unknown>>("sku_index", skuFilters, {
+    select: "sku_id,vendor_name,model_name,modality,modality_subtype,direction,normalized_price,normalized_price_unit,billing_method",
+    order: "model_name.asc,direction.asc",
     limit: params.limit,
   });
 
-  const gated = gateResults(skus as any, tier);
+  // Build catalog summary
+  const models = [...new Set(skus.map((s) => s.model_name as string))];
+  const modalities = [...new Set(skus.map((s) => s.modality as string))];
 
-  // Build catalog summary (available to all tiers)
   const catalogSummary = {
-    models: [...new Set(skus.map((s) => s.model_name as string))].length,
-    skus: skus.length,
-    modalities: [...new Set(skus.map((s) => s.modality as string))],
-    modality_subtypes: [...new Set(skus.map((s) => s.modality_subtype as string))],
+    vendor_name: vendor.vendor_name,
+    country: vendor.country,
+    region: vendor.region,
+    pricing_page: vendor.pricing_page_url,
+    website: vendor.vendor_url,
+    total_models: models.length,
+    total_skus: skus.length,
+    modalities,
   };
+
+  let catalog: unknown;
+
+  if (tier === "paid") {
+    catalog = {
+      summary: catalogSummary,
+      skus,
+    };
+  } else {
+    catalog = {
+      summary: catalogSummary,
+      sample: gateResults(skus.slice(0, 3), "free"),
+      upgrade_message:
+        "Full catalog with pricing requires ATOM MCP subscription ($49/mo). Visit https://a7om.com/pricing",
+    };
+  }
 
   return {
     content: [
@@ -82,15 +106,7 @@ export async function handleGetVendorCatalog(
           {
             tool: "get_vendor_catalog",
             tier,
-            vendor: {
-              name: vendor.vendor_name,
-              country: vendor.country,
-              region: vendor.region,
-              pricing_page: vendor.pricing_page_url,
-              specs_page: vendor.model_specifications_url,
-            },
-            catalog_summary: catalogSummary,
-            skus: gated.data,
+            catalog,
           },
           null,
           2

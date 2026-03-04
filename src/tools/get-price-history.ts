@@ -5,7 +5,6 @@
 
 import { z } from "zod";
 import { queryTable } from "../supabase.js";
-import { redactForFreeTier } from "../auth.js";
 import type { Tier, PriceIndex } from "../types.js";
 
 export const getPriceHistorySchema = {
@@ -40,7 +39,7 @@ export async function handleGetPriceHistory(
   if (params.vendor) filters.push(`vendor_name=ilike.*${params.vendor}*`);
 
   const history = await queryTable<PriceIndex>("price_index", filters, {
-    select: "sku_id,vendor_name,model_name,direction,normalized_price,normalized_unit,run_id",
+    select: "sku_id,vendor_name,model_name,direction,normalized_price,normalized_price_unit,run_id",
     order: "run_id.desc",
     limit: params.limit * 10, // Allow for multiple vendors
   });
@@ -86,7 +85,7 @@ export async function handleGetPriceHistory(
         vendor,
         model,
         direction: params.direction,
-        unit: sorted[0]?.normalized_unit,
+        unit: sorted[0]?.normalized_price_unit,
         data_points: sorted.map((r) => ({
           run_id: r.run_id,
           price: r.normalized_price,

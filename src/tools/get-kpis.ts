@@ -1,11 +1,11 @@
 // ============================================================
 // Tool: get_kpis
-// Developer-focused KPIs from v_pricing_intel view.
+// Developer-focused market KPIs from v_pricing_intel.
 // ============================================================
 
 import { z } from "zod";
 import { queryView } from "../supabase.js";
-import type { Tier, PricingIntel } from "../types.js";
+import type { Tier } from "../types.js";
 
 export const getKpisSchema = {};
 
@@ -13,16 +13,32 @@ export async function handleGetKpis(
   _params: z.infer<z.ZodObject<typeof getKpisSchema>>,
   tier: Tier
 ) {
-  const kpis = await queryView<PricingIntel>("v_pricing_intel");
+  // KPIs are public market intelligence — available to all tiers
+  // v_pricing_intel returns rows with KPI data
+  let kpis: Record<string, unknown>[] = [];
 
-  // KPIs are market-level intelligence — available to all tiers.
-  // This is what drives awareness and demonstrates ATOM's value.
-  const formatted = kpis.map((k) => ({
-    name: k.kpi_name,
-    value: k.kpi_value,
-    unit: k.kpi_unit,
-    description: k.kpi_description,
-  }));
+  try {
+    kpis = await queryView<Record<string, unknown>>("v_pricing_intel");
+  } catch (error) {
+    // If view doesn't exist or fails, return graceful error
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: JSON.stringify(
+            {
+              tool: "get_kpis",
+              tier,
+              error: "KPI view temporarily unavailable. Try again later.",
+              detail: String(error),
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  }
 
   return {
     content: [
@@ -34,7 +50,7 @@ export async function handleGetKpis(
             tier,
             description:
               "ATOM Inference Price Index — market-level KPIs derived from 1,600+ SKUs across 40+ vendors.",
-            kpis: formatted,
+            kpis,
             source: "https://a7om.com",
           },
           null,

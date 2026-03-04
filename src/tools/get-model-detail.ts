@@ -1,17 +1,17 @@
 // ============================================================
 // Tool: get_model_detail
-// Deep dive on a single model: specs + all SKUs across vendors.
+// Deep dive on a single model — specs + pricing across vendors.
 // ============================================================
 
 import { z } from "zod";
 import { queryTable } from "../supabase.js";
-import { redactForFreeTier } from "../auth.js";
-import type { Tier, ModelRegistry } from "../types.js";
+import { gateResults } from "../auth.js";
+import type { Tier, ModelRegistry, SkuIndex } from "../types.js";
 
 export const getModelDetailSchema = {
   model_name: z
     .string()
-    .describe("Model name to look up, e.g. 'GPT-4o', 'Claude Sonnet 4.5', 'Llama 3.1 405B'"),
+    .describe("Model name to look up, e.g. 'GPT-4o', 'Claude Sonnet 4.5', 'Llama 3.1 70B'"),
 };
 
 export async function handleGetModelDetail(
@@ -21,7 +21,9 @@ export async function handleGetModelDetail(
   // Find model in registry (fuzzy match)
   const models = await queryTable<ModelRegistry>("model_registry", [
     `model_name=ilike.*${params.model_name}*`,
-  ], { limit: 5 });
+  ], {
+    limit: 5,
+  });
 
   if (models.length === 0) {
     return {
@@ -30,7 +32,7 @@ export async function handleGetModelDetail(
           type: "text" as const,
           text: JSON.stringify({
             tool: "get_model_detail",
-            error: `No model found matching '${params.model_name}'. Try a partial name like 'GPT-4o' or 'Claude'.`,
+            error: `No model found matching '${params.model_name}'. Try a partial name like 'GPT-4' or 'Claude'.`,
           }),
         },
       ],
@@ -39,15 +41,16 @@ export async function handleGetModelDetail(
 
   const model = models[0];
 
-  // Get all SKUs for this model across all vendors
-  const skus = await queryTable<Record<string, unknown>>("sku_index", [
+  // Get all SKUs for this model across vendors
+  const skus = await queryTable<SkuIndex>("sku_index", [
     `model_id=eq.${model.model_id}`,
   ], {
-    order: "vendor_name.asc,direction.asc",
+    select: "sku_id,vendor_name,model_name,modality,modality_subtype,direction,normalized_price,normalized_price_unit,billing_method",
+    order: "normalized_price.asc",
   });
 
   // Build response
-  const specs: Record<string, unknown> = {
+  const modelSpecs = {
     model_id: model.model_id,
     model_name: model.model_name,
     creator: model.creator,
@@ -59,21 +62,37 @@ export async function handleGetModelDetail(
     training_cutoff: model.training_cutoff,
     modality_input: model.modality_input,
     modality_output: model.modality_output,
+    tool_calling: model.tool_calling,
+    json_mode: model.json_mode,
+    streaming: model.streaming,
     source_url: model.source_url,
   };
 
-  let pricingData: unknown;
+  let pricing: unknown;
+
   if (tier === "paid") {
-    pricingData = skus;
+    pricing = skus;
   } else {
-    pricingData = {
+    // Free tier: show count and redacted sample
+    const vendors = [...new Set(skus.map((s) => s.vendor_name))];
+    pricing = {
       total_skus: skus.length,
-      vendors_offering: [...new Set(skus.map((s) => s.vendor_name as string))].length,
-      sample: redactForFreeTier(skus.slice(0, 3)),
+      vendors_offering: vendors.length,
+      modalities: [...new Set(skus.map((s) => s.modality))],
+      directions: [...new Set(skus.map((s) => s.direction))],
+      sample: gateResults(
+        skus.slice(0, 3) as unknown as Record<string, unknown>[],
+        "free"
+      ),
       upgrade_message:
-        "Full pricing across all vendors requires ATOM MCP subscription ($49/mo). Visit https://a7om.com/pricing",
+        "Full vendor-by-vendor pricing requires ATOM MCP subscription ($49/mo). Visit https://a7om.com/pricing",
     };
   }
+
+  // Additional matches (other models with similar names)
+  const additionalMatches = models.length > 1
+    ? models.slice(1).map((m) => m.model_name)
+    : [];
 
   return {
     content: [
@@ -83,9 +102,9 @@ export async function handleGetModelDetail(
           {
             tool: "get_model_detail",
             tier,
-            model_specs: specs,
-            pricing: pricingData,
-            additional_matches: models.length > 1 ? models.slice(1).map(m => m.model_name) : undefined,
+            model_specs: modelSpecs,
+            pricing,
+            additional_matches: additionalMatches,
           },
           null,
           2

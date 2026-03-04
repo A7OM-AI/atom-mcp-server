@@ -5,12 +5,10 @@
 // Dual transport: stdio (local) and Streamable HTTP (remote).
 // Set TRANSPORT=http for HTTP mode, default is stdio.
 // ============================================================
-
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import express from "express";
 import { createServer } from "./server.js";
-
 // ----------------------------------------------------------
 // stdio transport (for Cursor, Claude Desktop, etc.)
 // ----------------------------------------------------------
@@ -20,13 +18,21 @@ async function runStdio(): Promise<void> {
   await server.connect(transport);
   console.error("ATOM MCP Server running via stdio");
 }
-
 // ----------------------------------------------------------
 // Streamable HTTP transport (for hosted / remote access)
 // ----------------------------------------------------------
 async function runHTTP(): Promise<void> {
   const app = express();
   app.use(express.json());
+
+  // CORS — allow browser-based MCP clients and test tools
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    res.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+    if (req.method === 'OPTIONS') { res.sendStatus(200); return; }
+    next();
+  });
 
   // Health check
   app.get("/health", (_req, res) => {
@@ -44,11 +50,9 @@ async function runHTTP(): Promise<void> {
       sessionIdGenerator: undefined, // stateless
       enableJsonResponse: true,
     });
-
     res.on("close", () => {
       transport.close();
     });
-
     await server.connect(transport);
     await transport.handleRequest(req, res, req.body);
   });
@@ -77,7 +81,6 @@ async function runHTTP(): Promise<void> {
 // Transport selection
 // ----------------------------------------------------------
 const transport = process.env.TRANSPORT || "stdio";
-
 if (transport === "http") {
   runHTTP().catch((error) => {
     console.error("ATOM MCP Server HTTP error:", error);

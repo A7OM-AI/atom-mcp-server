@@ -37,14 +37,19 @@ export interface ModelRegistry {
   parameter_count: string | null;
   context_window: number | null;
   max_output_tokens: number | null;
+  tool_calling: boolean | null;
+  json_mode: boolean | null;
+  streaming: boolean | null;
   training_cutoff: string | null;
   source_url: string | null;
   null_reasons: Record<string, string> | null;
   last_verified: string | null;
+  tier: string | null;
 }
 
 export interface SkuIndex {
   sku_id: string;
+  sku_plan_name: string | null;
   model_id: string;
   vendor_id: string;
   vendor_name: string;
@@ -53,36 +58,52 @@ export interface SkuIndex {
   modality_subtype: string;
   direction: string;
   normalized_price: number | null;
-  normalized_unit: string | null;
-  currency: string;
-  region: string;
-  country: string;
-  billing_model: string | null;
+  normalized_price_unit: string | null;
+  price_normalization_method: string | null;
+  original_price: string | null;
+  billing_method: string | null;
+  delivery_method: string | null;
+  pricing_notes: string | null;
+  verification_date: string | null;
   run_id: string | null;
+  aipi_eligible: boolean | null;
+  aipi_indexes: string | null;
+  exclusion_reason: string | null;
 }
 
 export interface PriceIndex {
   id: number;
   sku_id: string;
-  model_id: string;
   vendor_id: string;
+  model_id: string;
   vendor_name: string;
+  sku_plan_name: string | null;
   model_name: string;
   modality: string;
   modality_subtype: string;
   direction: string;
+  original_price: string | null;
   normalized_price: number | null;
-  normalized_unit: string | null;
-  currency: string;
-  region: string;
+  normalized_price_unit: string | null;
+  price_normalization_method: string | null;
+  verification_date: string | null;
+  billing_method: string | null;
+  delivery_method: string | null;
+  pricing_notes: string | null;
   run_id: string;
 }
 
 export interface IndexValues {
-  run_id: string;
-  index_name: string;
-  index_value: number;
-  model_count: number;
+  id: number;
+  index_code: string;
+  index_category: string;
+  index_description: string;
+  unit: string;
+  date: string;
+  input_price: number | null;
+  cached_price: number | null;
+  output_price: number | null;
+  sku_count: number;
   created_at: string;
 }
 
@@ -90,14 +111,13 @@ export interface IndexValues {
 // View types
 // ------------------------------------------------------------
 
-export interface SummaryStats {
-  total_vendors: number;
-  total_models: number;
-  total_skus: number;
-  total_modalities: number;
-  latest_run_id: string;
+/** v_summary_stats returns rows of {metric, value} */
+export interface SummaryStatRow {
+  metric: string;
+  value: string;
 }
 
+/** v_pricing_intel KPI rows */
 export interface PricingIntel {
   kpi_name: string;
   kpi_value: number;
@@ -113,8 +133,6 @@ export interface RedactedModel {
   model_id: string;
   modality: string;
   direction: string;
-  currency: string;
-  region: string;
   // Redacted fields
   vendor_name: "[UPGRADE TO ATOM MCP — $49/mo]";
   model_name: "[UPGRADE TO ATOM MCP — $49/mo]";
