@@ -25,7 +25,7 @@ export function resolveTier(apiKey?: string): Tier {
  */
 export function redactForFreeTier(
   rows: Record<string, unknown>[],
-  fieldsToRedact: string[] = ["vendor_name", "model_name", "normalized_price"]
+  fieldsToRedact: string[] = ["vendor_name", "model_name", "normalized_price", "sku_id", "model_id", "vendor_id", "sku_plan_name"]
 ): Record<string, unknown>[] {
   const REDACTED = "[UPGRADE TO ATOM MCP Pro — $49/mo]";
   return rows.map((row) => {
