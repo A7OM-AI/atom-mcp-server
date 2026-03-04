@@ -1,11 +1,16 @@
 {
   "name": "atom-mcp-server",
-  "version": "1.0.0",
-  "description": "ATOM Inference Price Index — AI pricing intelligence for agents and developers. 1,600+ SKUs, 40+ vendors, 27+ queryable parameters.",
+  "version": "1.1.0",
+  "description": "ATOM Inference Price Index — AI pricing intelligence for agents and developers. 1,600+ SKUs, 40+ vendors, 25 AIPI indexes, 8 tools.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
     "atom-mcp-server": "./dist/index.js"
+  },
+  "homepage": "https://a7om.com/mcp",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/A7OM-AI/atom-mcp-server"
   },
   "scripts": {
     "build": "tsc",
@@ -23,7 +28,11 @@
     "llm",
     "model-context-protocol",
     "atom",
-    "aipi"
+    "aipi",
+    "ai-pricing",
+    "inference-pricing",
+    "finops",
+    "cost-optimization"
   ],
   "author": "ATOM (A7OM) — Member One EOOD",
   "license": "MIT",

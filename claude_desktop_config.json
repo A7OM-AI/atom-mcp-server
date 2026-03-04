@@ -1,13 +1,8 @@
 {
   "mcpServers": {
-    "atom": {
-      "command": "node",
-      "args": ["/path/to/atom-mcp-server/dist/index.js"],
-      "env": {
-        "SUPABASE_URL": "https://jonncmzxvxzwyaznokba.supabase.co",
-        "SUPABASE_ANON_KEY": "YOUR_SUPABASE_ANON_KEY",
-        "ATOM_API_KEYS": "YOUR_API_KEY_HERE"
-      }
+    "atom-pricing": {
+      "command": "npx",
+      "args": ["mcp-remote", "https://atom-mcp-server-production.up.railway.app/mcp"]
     }
   }
 }
