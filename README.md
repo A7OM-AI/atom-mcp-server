@@ -2,7 +2,7 @@
 
 **AI Inference Pricing Intelligence — delivered as a native tool for AI agents.**
 
-1,600+ SKUs · 40+ vendors · 6 modalities · 27+ queryable parameters · Weekly AIPI index updates
+1,500+ SKUs · 40+ vendors · 6 modalities · 30+ queryable parameters · Real-time Inference Price Updates
 
 ## What Is This?
 
@@ -107,4 +107,4 @@ MIT
 
 ---
 
-**ATOM** — *The pricing oracle for AI inference.*
+**ATOM** — *The Global Price Benchmark for AI Inference.*
