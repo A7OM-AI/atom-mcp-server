@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/atom-logo.png" alt="ATOM" width="200" />
+  <img src="https://raw.githubusercontent.com/StamatiosKanellakis/A7OM/main/ATOM_Logo_Gray.png" alt="ATOM" width="200" />
 </p>
 
 <h1 align="center">ATOM MCP Server</h1>
