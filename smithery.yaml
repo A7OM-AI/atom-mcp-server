@@ -1,0 +1,36 @@
+# Smithery.ai configuration
+# https://smithery.ai/docs/build/project-config/smithery-yaml
+
+runtime: typescript
+
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    required:
+      - supabaseUrl
+      - supabaseAnonKey
+    properties:
+      supabaseUrl:
+        type: string
+        description: "Supabase project URL for ATOM pricing database"
+      supabaseAnonKey:
+        type: string
+        description: "Supabase anonymous/public API key"
+      atomApiKeys:
+        type: string
+        description: "Comma-separated API keys for paid tier access (optional — omit for free tier)"
+  commandFunction: |-
+    (config) => ({
+      command: 'node',
+      args: ['./dist/index.js'],
+      env: {
+        SUPABASE_URL: config.supabaseUrl,
+        SUPABASE_ANON_KEY: config.supabaseAnonKey,
+        ...(config.atomApiKeys ? { ATOM_API_KEYS: config.atomApiKeys } : {}),
+        TRANSPORT: 'stdio'
+      }
+    })
+  exampleConfig:
+    supabaseUrl: "https://your-project.supabase.co"
+    supabaseAnonKey: "your-anon-key"

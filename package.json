@@ -1,0 +1,43 @@
+{
+  "name": "atom-mcp-server",
+  "version": "1.0.0",
+  "description": "ATOM Inference Price Index — AI pricing intelligence for agents and developers. 1,600+ SKUs, 40+ vendors, 27+ queryable parameters.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "atom-mcp-server": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch",
+    "start:http": "TRANSPORT=http node dist/index.js",
+    "start:stdio": "TRANSPORT=stdio node dist/index.js",
+    "inspector": "npx @modelcontextprotocol/inspector dist/index.js"
+  },
+  "keywords": [
+    "mcp",
+    "ai",
+    "pricing",
+    "inference",
+    "llm",
+    "model-context-protocol",
+    "atom",
+    "aipi"
+  ],
+  "author": "ATOM (A7OM) — Member One EOOD",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.0",
+    "express": "^5.0.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
