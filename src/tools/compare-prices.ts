@@ -26,7 +26,7 @@ export const comparePricesSchema = {
     .optional()
     .describe("Filter by modality: Text, Image, Audio, etc."),
   limit: z
-    .number()
+    .coerce.number()
     .int()
     .min(1)
     .max(100)

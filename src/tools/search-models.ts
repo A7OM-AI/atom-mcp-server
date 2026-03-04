@@ -34,11 +34,11 @@ export const searchModelsSchema = {
     .optional()
     .describe("Filter by pricing direction"),
   max_price: z
-    .number()
+    .coerce.number()
     .optional()
     .describe("Maximum normalized price (USD per unit)"),
   min_context_window: z
-    .number()
+    .coerce.number()
     .int()
     .optional()
     .describe("Minimum context window in tokens"),
@@ -47,14 +47,14 @@ export const searchModelsSchema = {
     .optional()
     .describe("Minimum parameter count, e.g. '7B', '70B'"),
   limit: z
-    .number()
+    .coerce.number()
     .int()
     .min(1)
     .max(100)
     .default(20)
     .describe("Maximum results to return (default 20)"),
   offset: z
-    .number()
+    .coerce.number()
     .int()
     .min(0)
     .default(0)

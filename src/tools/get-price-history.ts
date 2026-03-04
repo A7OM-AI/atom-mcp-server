@@ -20,7 +20,7 @@ export const getPriceHistorySchema = {
     .default("Input")
     .describe("Pricing direction (default: Input)"),
   limit: z
-    .number()
+    .coerce.number()
     .int()
     .min(1)
     .max(52)

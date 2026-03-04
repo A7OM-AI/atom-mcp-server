@@ -21,7 +21,7 @@ export const getVendorCatalogSchema = {
     .optional()
     .describe("Optionally filter by pricing direction"),
   limit: z
-    .number()
+    .coerce.number()
     .int()
     .min(1)
     .max(200)
