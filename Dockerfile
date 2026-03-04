@@ -3,9 +3,12 @@ FROM node:22-alpine
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm install
 
-COPY dist/ ./dist/
+COPY tsconfig.json ./
+COPY src/ ./src/
+
+RUN npm run build
 
 ENV TRANSPORT=http
 ENV PORT=3000
