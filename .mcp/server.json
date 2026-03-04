@@ -1,0 +1,28 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.A7OM-AI/atom-mcp-server",
+  "title": "ATOM Pricing Intelligence",
+  "description": "The Global Price Benchmark for AI Inference. 1,600+ SKUs, 40+ vendors, 25 indexes.",
+  "repository": {
+    "url": "https://github.com/A7OM-AI/atom-mcp-server",
+    "source": "github"
+  },
+  "version": "1.1.1",
+  "websiteUrl": "https://a7om.com/mcp",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "atom-mcp-server",
+      "version": "1.1.1",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ],
+  "remotes": [
+    {
+      "type": "sse",
+      "url": "https://atom-mcp-server-production.up.railway.app/mcp"
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 {
   "name": "atom-mcp-server",
-  "version": "1.1.0",
+  "mcpName": "io.github.A7OM-AI/atom-mcp-server",
+  "version": "1.1.1",
   "description": "ATOM Inference Price Index — AI pricing intelligence for agents and developers. 1,600+ SKUs, 40+ vendors, 25 AIPI indexes, 8 tools.",
   "type": "module",
   "main": "dist/index.js",
