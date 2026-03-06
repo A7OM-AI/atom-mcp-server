@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>AI Inference Pricing Intelligence — delivered as a native tool for AI agents.</strong><br/>
-  1,600+ SKUs · 40+ vendors · 6 modalities · 25 AIPI indexes · Updated weekly
+  1,600+ SKUs · 40+ vendors · 6 modalities · 4 channels · 14 AIPI indexes · Updated weekly
 </p>
 
 <p align="center">
@@ -27,13 +27,28 @@ Built by [ATOM (A7OM)](https://a7om.com) — the world's first methodological in
 
 ---
 
+## AIPI Indexes
+
+14 benchmark indexes across four categories:
+
+| Category | Indexes | What It Answers |
+|----------|---------|-----------------|
+| **Modality** | TXT, MML, IMG, AUD, VID, VOC | What does this type of inference cost? |
+| **Channel** | DEV, CLD, PLT, NCL | Where should you buy — direct, marketplace, platform, or neocloud? |
+| **Tier** | FTR, BDG, RSN | What's the premium for flagship vs budget vs reasoning? |
+| **Special** | OSS | How much cheaper is open-source inference across all channels? |
+
+All indexes are global (GLB), calculated weekly using chained matched-model methodology to eliminate composition bias.
+
+---
+
 ## Tools
 
 | Tool | Tier | Description |
 |------|------|-------------|
-| `list_vendors` | Free | All 41 tracked vendors with country, region, and pricing page URLs |
+| `list_vendors` | Free | All tracked vendors with country, region, channel type, and pricing page URLs |
 | `get_kpis` | Free | 6 market KPIs: output premium, caching savings, open-source advantage, context cost curve, caching availability, size spread |
-| `get_index_benchmarks` | Free | AIPI price benchmarks across 25 indexes — text, image, audio, video, multimodal by geography and tier |
+| `get_index_benchmarks` | Free | AIPI price benchmarks across 14 indexes — modality, channel, tier, and licensing |
 | `get_market_stats` | Tiered | Aggregate market intelligence: medians, quartiles, distributions, modality breakdown |
 | `search_models` | Tiered | Multi-filter search: modality, vendor, creator, open-source, price range, context window, parameters |
 | `get_model_detail` | Tiered | Full specs + pricing across all vendors for a single model |
@@ -140,6 +155,8 @@ Once connected, just ask your AI assistant naturally:
 - *"Find open-source text models under $0.50 per million tokens"*
 - *"Show me Google's full model catalog"*
 - *"What are the AIPI benchmark prices for text inference?"*
+- *"How do neocloud prices compare to cloud marketplaces?"*
+- *"How much cheaper is open-source inference?"*
 - *"Give me a market overview of AI inference pricing"*
 - *"What are the key market KPIs for AI inference?"*
 
@@ -169,7 +186,9 @@ Once connected, just ask your AI assistant naturally:
 
 ## About ATOM
 
-ATOM tracks 1,600+ AI inference pricing SKUs from 40+ vendors globally through the AIPI (ATOM Inference Price Index) system — the first methodological price benchmark for AI inference. Updated weekly using chained matched-model methodology to eliminate composition bias.
+ATOM tracks 1,600+ AI inference pricing SKUs from 40+ vendors globally through the AIPI (ATOM Inference Price Index) system — the first methodological price benchmark for AI inference. 14 indexes span modality, channel, tier, and licensing dimensions, updated weekly using chained matched-model methodology to eliminate composition bias.
+
+Vendors are classified across four distribution channels: Model Developers (direct API), Cloud Marketplaces (AWS Bedrock, Google Vertex, Azure), Inference Platforms (DeepInfra, Fireworks, Together AI), and Neoclouds (Groq, Cerebras).
 
 **Products:** [ATOM MCP](https://a7om.com/mcp) · [ATOM Terminal](https://a7om.com/terminal) · [ATOM Feed](https://a7om.com/feed)
 
