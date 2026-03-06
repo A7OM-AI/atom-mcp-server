@@ -1,6 +1,6 @@
 // ============================================================
 // Tool: get_index_benchmarks
-// AIPI index family benchmarks — public market intelligence.
+// AIPI index benchmarks — public market intelligence.
 // ============================================================
 
 import { z } from "zod";
@@ -12,13 +12,13 @@ export const getIndexBenchmarksSchema = {
     .string()
     .optional()
     .describe(
-      "Filter by specific AIPI index code, e.g. 'AIPI-TXT-GLB', 'AIPI-IMG-GLB'. Omit to see all indexes."
+      "Filter by specific AIPI index code, e.g. 'AIPI TXT GLB', 'AIPI DEV GLB', 'AIPI OSS GLB'. Omit to see all indexes."
     ),
   index_category: z
     .string()
     .optional()
     .describe(
-      "Filter by index category, e.g. 'Text', 'Image', 'Audio', 'Video', 'Multimodal', 'Composite'"
+      "Filter by index category: 'Modality', 'Channel', 'Tier', 'Special'"
     ),
   limit: z
     .coerce.number()

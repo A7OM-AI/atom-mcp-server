@@ -31,7 +31,7 @@ const apiKeyField = {
 export function createServer(): McpServer {
   const server = new McpServer({
     name: "atom-mcp-server",
-    version: "1.0.0",
+    version: "1.1.0",
   });
 
   // ----------------------------------------------------------
@@ -189,16 +189,24 @@ Examples:
       title: "Get AIPI Index Benchmarks",
       description: `AIPI (ATOM Inference Price Index) — chained matched-model price benchmarks for AI inference.
 
-Returns benchmark prices across index families (Text, Image, Audio, Video, Multimodal, Composite) with input, cached, and output pricing per period.
+Returns 14 benchmark indexes across four categories:
+- Modality (6): Text, Multimodal, Image, Audio, Video, Voice — what does this type of inference cost?
+- Channel (4): Model Developers, Cloud Marketplaces, Inference Platforms, Neoclouds — where should you buy?
+- Tier (3): Frontier, Budget, Reasoning — what's the premium for capability?
+- Special (1): Open-Source — how much cheaper is open-weight inference?
+
+Each index includes input, cached input, and output pricing per period.
 
 These are market-wide benchmarks, not individual vendor prices. Use them to understand where the market is and how it's moving.
 
 Fully public — available to all tiers.
 
 Examples:
-  - "What's the current benchmark for text inference?" → index_category="Text"
+  - "What's the current benchmark for text inference?" → index_category="Modality"
   - "Show me all AIPI indexes" → (no params)
-  - "AIPI-TXT-GLB history" → index_code="AIPI-TXT-GLB"`,
+  - "Neocloud pricing benchmark" → index_code="AIPI NCL GLB"
+  - "Channel pricing comparison" → index_category="Channel"
+  - "Open-source vs market pricing" → index_code="AIPI OSS GLB"`,
       inputSchema: { ...getIndexBenchmarksSchema, ...apiKeyField },
       annotations: {
         readOnlyHint: true,
@@ -222,7 +230,7 @@ Examples:
       title: "Get Market KPIs",
       description: `ATOM Inference Price Index (AIPI) market-level KPIs.
 
-Returns 6 key performance indicators derived from 1,600+ SKUs:
+Returns 6 key performance indicators derived from live pricing data:
 - Output Premium: how much more output tokens cost vs input
 - Caching Savings: average discount for cached input pricing
 - Open Source Advantage: price difference between open-source and proprietary
@@ -252,9 +260,9 @@ These KPIs are available to all tiers — they demonstrate ATOM's market intelli
     "list_vendors",
     {
       title: "List All Vendors",
-      description: `List all 41 AI inference vendors tracked by ATOM.
+      description: `List all AI inference vendors tracked by ATOM.
 
-Returns vendor name, country, region, and pricing page URL. Optionally filter by region or country.
+Returns vendor name, country, region, and pricing page URL. Vendors span four channel types: Model Developers, Cloud Marketplaces, Inference Platforms, and Neoclouds. Optionally filter by region or country.
 
 Examples:
   - "List all vendors" → (no params)
