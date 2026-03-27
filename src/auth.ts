@@ -1,22 +1,42 @@
 // ============================================================
 // ATOM MCP Server — Authentication & Tier Gating
 // ============================================================
-
 import type { Tier } from "./types.js";
+import { queryTable } from "./supabase.js";
 
-// Valid API keys are loaded from environment.
-// In production, these would be validated against a database.
-const VALID_API_KEYS = new Set(
-  (process.env.ATOM_API_KEYS || "").split(",").filter(Boolean)
-);
+// Cache valid keys in memory (refreshed every 5 minutes)
+let cachedKeys: Set<string> = new Set();
+let lastFetch = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+async function loadKeys(): Promise<Set<string>> {
+  const now = Date.now();
+  if (now - lastFetch < CACHE_TTL && cachedKeys.size > 0) {
+    return cachedKeys;
+  }
+  try {
+    const rows = await queryTable<{ key_id: string }>(
+      "api_keys",
+      ["active=eq.true"],
+      { select: "key_id" }
+    );
+    cachedKeys = new Set(rows.map((r) => r.key_id));
+    lastFetch = now;
+  } catch (err) {
+    console.error("ATOM MCP: Failed to load API keys from Supabase:", err);
+    // Keep using cached keys if fetch fails
+  }
+  return cachedKeys;
+}
 
 /**
  * Determine the access tier from an API key.
  * No key or invalid key = free tier.
  */
-export function resolveTier(apiKey?: string): Tier {
+export async function resolveTier(apiKey?: string): Promise<Tier> {
   if (!apiKey) return "free";
-  return VALID_API_KEYS.has(apiKey.trim()) ? "paid" : "free";
+  const keys = await loadKeys();
+  return keys.has(apiKey.trim()) ? "paid" : "free";
 }
 
 /**
@@ -52,10 +72,8 @@ export function buildFreeTierSummary(rows: Record<string, unknown>[]): {
   const prices = rows
     .map((r) => r.normalized_price as number)
     .filter((p): p is number => p !== null && p > 0);
-
   const modalities = [...new Set(rows.map((r) => r.modality as string).filter(Boolean))];
   const directions = [...new Set(rows.map((r) => r.direction as string).filter(Boolean))];
-
   return {
     total_results: rows.length,
     price_range: {

@@ -60,7 +60,7 @@ Examples:
       },
     },
     async (params) => {
-      const tier = resolveTier(params._atom_api_key);
+      const tier = await resolveTier(params._atom_api_key);
       return handleSearchModels(params, tier);
     }
   );
@@ -88,7 +88,7 @@ Examples:
       },
     },
     async (params) => {
-      const tier = resolveTier(params._atom_api_key);
+      const tier = await resolveTier(params._atom_api_key);
       return handleGetModelDetail(params, tier);
     }
   );
@@ -117,7 +117,7 @@ Examples:
       },
     },
     async (params) => {
-      const tier = resolveTier(params._atom_api_key);
+      const tier = await resolveTier(params._atom_api_key);
       return handleComparePrices(params, tier);
     }
   );
@@ -146,7 +146,7 @@ Examples:
       },
     },
     async (params) => {
-      const tier = resolveTier(params._atom_api_key);
+      const tier = await resolveTier(params._atom_api_key);
       return handleGetVendorCatalog(params, tier);
     }
   );
@@ -175,7 +175,7 @@ Examples:
       },
     },
     async (params) => {
-      const tier = resolveTier(params._atom_api_key);
+      const tier = await resolveTier(params._atom_api_key);
       return handleGetMarketStats(params, tier);
     }
   );
@@ -216,7 +216,7 @@ Examples:
       },
     },
     async (params) => {
-      const tier = resolveTier(params._atom_api_key);
+      const tier = await resolveTier(params._atom_api_key);
       return handleGetIndexBenchmarks(params, tier);
     }
   );
@@ -248,7 +248,7 @@ These KPIs are available to all tiers — they demonstrate ATOM's market intelli
       },
     },
     async (params) => {
-      const tier = resolveTier(params._atom_api_key);
+      const tier = await resolveTier(params._atom_api_key);
       return handleGetKpis(params, tier);
     }
   );
@@ -277,7 +277,7 @@ Examples:
       },
     },
     async (params) => {
-      const tier = resolveTier(params._atom_api_key);
+      const tier = await resolveTier(params._atom_api_key);
       return handleListVendors(params, tier);
     }
   );
