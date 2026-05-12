@@ -1,90 +1,3 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/StamatiosKanellakis/A7OM/main/ATOM_Logo_Gray.png" alt="ATOM" width="200" />
-</p>
-
-<h1 align="center">ATOM MCP Server</h1>
-
-<p align="center">
-  <strong>AI Inference Pricing Intelligence — delivered as a native tool for AI agents.</strong><br/>
-  1,600+ SKUs · 40+ vendors · 6 modalities · 4 channels · 14 AIPI indexes · Updated weekly
-</p>
-
-<p align="center">
-  <a href="https://a7om.com">Website</a> ·
-  <a href="https://a7om.com/mcp">ATOM MCP Pro</a> ·
-  <a href="https://smithery.ai/server/@a7om/atom-mcp-server">Smithery</a>
-</p>
-
----
-
-## What Is This?
-
-ATOM MCP Server lets any MCP-compatible AI agent (Claude, GPT, Cursor, Windsurf, VS Code Copilot) query real-time AI inference pricing data programmatically. Think of it as **the Bloomberg Terminal for AI pricing**, accessible via the Model Context Protocol.
-
-Ask your AI assistant a question like *"What's the cheapest way to run GPT-4o?"* and it calls ATOM's tools behind the scenes, returning a data-backed answer from 1,600+ pricing SKUs across 40+ vendors globally.
-
-Built by [ATOM (A7OM)](https://a7om.com) — the world's first methodological inference pricing index.
-
----
-
-## AIPI Indexes
-
-14 benchmark indexes across four categories:
-
-| Category | Indexes | What It Answers |
-|----------|---------|-----------------|
-| **Modality** | TXT, MML, IMG, AUD, VID, VOC | What does this type of inference cost? |
-| **Channel** | DEV, CLD, PLT, NCL | Where should you buy — direct, marketplace, platform, or neocloud? |
-| **Tier** | FTR, BDG, RSN | What's the premium for flagship vs budget vs reasoning? |
-| **Special** | OSS | How much cheaper is open-source inference across all channels? |
-
-All indexes are global (GLB), calculated weekly using chained matched-model methodology to eliminate composition bias.
-
----
-
-## Tools
-
-| Tool | Tier | Description |
-|------|------|-------------|
-| `list_vendors` | Free | All tracked vendors with country, region, channel type, and pricing page URLs |
-| `get_kpis` | Free | 6 market KPIs: output premium, caching savings, open-source advantage, context cost curve, caching availability, size spread |
-| `get_index_benchmarks` | Free | AIPI price benchmarks across 14 indexes — modality, channel, tier, and licensing |
-| `get_market_stats` | Tiered | Aggregate market intelligence: medians, quartiles, distributions, modality breakdown |
-| `search_models` | Tiered | Multi-filter search: modality, vendor, creator, open-source, price range, context window, parameters |
-| `get_model_detail` | Tiered | Full specs + pricing across all vendors for a single model |
-| `compare_prices` | Tiered | Cross-vendor price comparison for a model or model family |
-| `get_vendor_catalog` | Tiered | Complete catalog for a specific vendor: all models, modalities, and pricing |
-
----
-
-## Pricing Tiers
-
-| | ATOM MCP (Free) | ATOM MCP Pro ($49/mo) |
-|---|---|---|
-| Vendors, KPIs, AIPI indexes | ✅ Full data | ✅ Full data |
-| Market stats | Aggregates only | + Vendor-level breakdown |
-| Model search & comparison | Counts + price ranges | Full granular SKU data |
-| Model detail | Specs only | + Per-vendor pricing |
-| Vendor catalog | Summary only | Full SKU listing |
-
-**Free tier** (no API key): Enough to understand the market — counts, ranges, distributions, benchmarks.
-
-**ATOM MCP Pro** ($49/mo): Full granular data — every vendor, model, price, and spec. → [a7om.com/mcp](https://a7om.com/mcp)
-
----
-
-## Quick Start
-
-### Option 1: Remote URL — Claude.ai / Claude Desktop (recommended)
-
-No install required. Connect directly to ATOM's hosted server:
-
-**Claude.ai (web):** Settings → Connectors → Add custom connector
-```
-Name: ATOM Pricing Intelligence
-URL:  https://atom-mcp-server-production.up.railway.app/mcp
-```
-
 **Claude Desktop:** Settings → Developer → Edit Config
 ```json
 {
@@ -96,7 +9,7 @@ URL:  https://atom-mcp-server-production.up.railway.app/mcp
 }
 ```
 
-> Note: Remote URL support requires a recent Claude Desktop version. If it doesn't work, use the npx method below.
+> Note: Remote URL support requires a recent Claude Desktop version. If it does not work, use the npx method below.
 
 **Claude Desktop (via npx proxy):**
 ```json
@@ -110,7 +23,7 @@ URL:  https://atom-mcp-server-production.up.railway.app/mcp
 }
 ```
 
-### Option 2: Local (stdio) — for Cursor, Windsurf, etc.
+### Option 2: Local (stdio) for Cursor, Windsurf, and similar clients
 
 ```bash
 git clone https://github.com/A7OM-AI/atom-mcp-server.git
@@ -148,7 +61,7 @@ Set environment variables in Railway dashboard:
 
 ## Example Queries
 
-Once connected, just ask your AI assistant naturally:
+Once connected, ask your AI assistant in natural language:
 
 - *"What's the cheapest way to run GPT-4o?"*
 - *"Compare Claude Sonnet 4.5 pricing across all vendors"*
@@ -158,7 +71,6 @@ Once connected, just ask your AI assistant naturally:
 - *"How do neocloud prices compare to cloud marketplaces?"*
 - *"How much cheaper is open-source inference?"*
 - *"Give me a market overview of AI inference pricing"*
-- *"What are the key market KPIs for AI inference?"*
 
 ---
 
@@ -186,9 +98,9 @@ Once connected, just ask your AI assistant naturally:
 
 ## About ATOM
 
-ATOM tracks 1,600+ AI inference pricing SKUs from 40+ vendors globally through the AIPI (ATOM Inference Price Index) system — the first methodological price benchmark for AI inference. 14 indexes span modality, channel, tier, and licensing dimensions, updated weekly using chained matched-model methodology to eliminate composition bias.
+The Global Price Benchmark for AI Inference. Independent pricing intelligence for developers, analysts, and infrastructure buyers. Transparent methodology, deterministic indexing, weekly market intelligence across the global AI inference market.
 
-Vendors are classified across four distribution channels: Model Developers (direct API), Cloud Marketplaces (AWS Bedrock, Google Vertex, Azure), Inference Platforms (DeepInfra, Fireworks, Together AI), and Neoclouds (Groq, Cerebras).
+ATOM was founded in 2025 by Stamos Kanellakis. The platform is built on financial index methodology comparable to S&P Dow Jones, MSCI, and Bloomberg, and applies that discipline to a market that previously had no pricing benchmark of its own.
 
 **Products:** [ATOM MCP](https://a7om.com/mcp) · [ATOM Terminal](https://a7om.com/terminal) · [ATOM Feed](https://a7om.com/feed)
 
@@ -200,4 +112,4 @@ MIT
 
 ---
 
-<p align="center"><strong>ATOM</strong> — <em>The Global Price Benchmark for AI Inference.</em></p>
+<p align="center"><strong>ATOM</strong> · <em>The Global Price Benchmark for AI Inference.</em></p>
