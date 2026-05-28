@@ -1,7 +1,7 @@
 // ============================================================
 // ATOM MCP Server — Tool Registration
 // ============================================================
-// Registers all 8 tools with the MCP SDK's McpServer.
+// Registers all 9 tools with the MCP SDK's McpServer.
 // Each tool handler resolves the caller's tier from the API key
 // passed via the _atom_api_key field.
 // ============================================================
@@ -18,6 +18,7 @@ import { getVendorCatalogSchema, handleGetVendorCatalog } from "./tools/get-vend
 import { getMarketStatsSchema, handleGetMarketStats } from "./tools/get-market-stats.js";
 import { getIndexBenchmarksSchema, handleGetIndexBenchmarks } from "./tools/get-index-benchmarks.js";
 import { getKpisSchema, handleGetKpis } from "./tools/get-kpis.js";
+import { getModelIntelligenceSchema, handleGetModelIntelligence } from "./tools/get-model-intelligence.js";
 import { listVendorsSchema, handleListVendors } from "./tools/list-vendors.js";
 
 // Common API key field injected into every tool's schema
@@ -41,7 +42,7 @@ export function createServer(): McpServer {
     "search_models",
     {
       title: "Search AI Models",
-      description: `Search and filter AI inference models across 40+ vendors and 1,600+ SKUs.
+      description: `Search and filter AI inference models across all tracked vendors and SKUs.
 
 Query by modality (Text, Image, Audio, Video, Multimodal), vendor, creator, model family, open-source status, price range, context window, and parameter count.
 
@@ -189,10 +190,10 @@ Examples:
       title: "Get AIPI Index Benchmarks",
       description: `AIPI (ATOM Inference Price Index) — chained matched-model price benchmarks for AI inference.
 
-Returns 14 benchmark indexes across four categories:
+Returns 15 benchmark indexes across four categories:
 - Modality (6): Text, Multimodal, Image, Audio, Video, Voice — what does this type of inference cost?
 - Channel (4): Model Developers, Cloud Marketplaces, Inference Platforms, Neoclouds — where should you buy?
-- Tier (3): Frontier, Budget, Reasoning — what's the premium for capability?
+- Tier (4): Frontier, Budget, Mid, Reasoning — what's the premium for capability?
 - Special (1): Open-Source — how much cheaper is open-weight inference?
 
 Each index includes input, cached input, and output pricing per period.
@@ -228,15 +229,16 @@ Examples:
     "get_kpis",
     {
       title: "Get Market KPIs",
-      description: `ATOM Inference Price Index (AIPI) market-level KPIs.
-
-Returns 6 key performance indicators derived from live pricing data:
-- Output Premium: how much more output tokens cost vs input
-- Caching Savings: average discount for cached input pricing
-- Open Source Advantage: price difference between open-source and proprietary
-- Context Cost Curve: price multiplier for larger context windows
-- Caching Availability: % of models offering cached pricing
-- Size Spread: price ratio between largest and smallest models
+      description: `ATOM Inference Market KPIs — 9 cost and structure metrics derived from live pricing data across all tracked vendors:
+- Output Price Premium: how much more output tokens cost vs input
+- Caching Discount Rate: average discount for cached input pricing
+- Open Source Discount Rate: price gap between open-source and proprietary
+- Context Window Cost: price multiplier for 128K+ vs smaller context
+- Model Size Spread: price ratio between large and small models
+- Reasoning Premium: cost of reasoning models vs standard text
+- Platform Discount Rate: inference platforms vs buying direct
+- Neocloud Discount Rate: GPU-native providers vs model developers
+- Caching Availability: % of text models offering cached pricing
 
 These KPIs are available to all tiers — they demonstrate ATOM's market intelligence.`,
       inputSchema: { ...getKpisSchema, ...apiKeyField },
@@ -254,7 +256,44 @@ These KPIs are available to all tiers — they demonstrate ATOM's market intelli
   );
 
   // ----------------------------------------------------------
-  // 8. list_vendors
+  // 8. get_model_intelligence
+  // ----------------------------------------------------------
+  server.registerTool(
+    "get_model_intelligence",
+    {
+      title: "Get Model Intelligence KPIs",
+      description: `ATOM Model Intelligence — 6 capability and coverage metrics derived from the metadata behind every tracked model. Complements the pricing KPIs in get_kpis.
+
+Returns 6 metrics:
+- Reasoning Tier Share: % of general-purpose text models that are reasoning-tier
+- Long-Context Saturation: % of models shipping 128K+ context windows
+- Frontier Context Ceiling: context multiplier between top-decile and median models
+- Output Ceiling Spread: max output token multiplier between top-decile and median
+- Training Cutoff Lag: median months between model training cutoff and today
+- Vendor Modality Breadth: median number of modalities offered per vendor
+
+Read alongside pricing, these explain why a model is priced the way it is. Available to all tiers.
+
+Examples:
+  - "How stale are AI models on average?" → Training Cutoff Lag
+  - "What share of models support long context?" → Long-Context Saturation
+  - "How rare are reasoning models?" → Reasoning Tier Share`,
+      inputSchema: { ...getModelIntelligenceSchema, ...apiKeyField },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    async (params) => {
+      const tier = await resolveTier(params._atom_api_key);
+      return handleGetModelIntelligence(params, tier);
+    }
+  );
+
+  // ----------------------------------------------------------
+  // 9. list_vendors
   // ----------------------------------------------------------
   server.registerTool(
     "list_vendors",
