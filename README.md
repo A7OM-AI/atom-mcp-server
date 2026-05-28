@@ -43,11 +43,14 @@ All indexes are global (GLB) and reported across three pricing directions: input
 
 ## Tools
 
+Two complementary intelligence layers. Pricing tells you what inference costs; Model Intelligence tells you what you are paying for.
+
 | Tool | Tier | Description |
 |------|------|-------------|
 | `list_vendors` | Free | All tracked vendors with country, region, channel type, and pricing page URLs |
-| `get_kpis` | Free | Market KPIs: output premium, caching savings, open-source advantage, context cost curve, caching availability, size spread |
-| `get_index_benchmarks` | Free | AIPI price benchmarks across all indexes |
+| `get_kpis` | Free | 9 pricing KPIs: output premium, caching discount, open-source discount, context window cost, model size spread, reasoning premium, platform discount, neocloud discount, caching availability |
+| `get_model_intelligence` | Free | 6 capability KPIs from model metadata: reasoning tier share, long-context saturation, frontier context ceiling, output ceiling spread, training cutoff lag, vendor modality breadth |
+| `get_index_benchmarks` | Free | AIPI price benchmarks across all 15 indexes |
 | `get_market_stats` | Tiered | Aggregate market intelligence: medians, quartiles, distributions, modality breakdown |
 | `search_models` | Tiered | Multi-filter search: modality, vendor, creator, open-source, price range, context window, parameters |
 | `get_model_detail` | Tiered | Full specs and pricing across all vendors for a single model |
@@ -60,13 +63,13 @@ All indexes are global (GLB) and reported across three pricing directions: input
 
 | | ATOM MCP (Free) | ATOM MCP Pro |
 |---|---|---|
-| Vendors, KPIs, AIPI indexes | Full data | Full data |
+| Vendors, KPIs, Model Intelligence, AIPI indexes | Full data | Full data |
 | Market stats | Aggregates only | Vendor-level breakdown |
 | Model search and comparison | Counts and price ranges | Full granular SKU data |
 | Model detail | Specs only | Per-vendor pricing |
 | Vendor catalog | Summary only | Full SKU listing |
 
-**Free tier** (no API key): enough to understand the market through counts, ranges, distributions, and benchmarks.
+**Free tier** (no API key): enough to understand the market through counts, ranges, distributions, benchmarks, and capability metrics.
 
 **ATOM MCP Pro**: full granular data across every vendor, model, price, and spec. Subscribe at [a7om.com/mcp](https://a7om.com/mcp).
 
@@ -80,7 +83,7 @@ No install required. Connect directly to ATOM's hosted server.
 
 **Claude.ai (web):** Settings → Connectors → Add custom connector
 
-```
+```text
 Name: ATOM Pricing Intelligence
 URL:  https://atom-mcp-server-production.up.railway.app/mcp
 ```
@@ -160,6 +163,8 @@ Once connected, ask your AI assistant in natural language:
 - *"What are the AIPI benchmark prices for text inference?"*
 - *"How do neocloud prices compare to cloud marketplaces?"*
 - *"How much cheaper is open-source inference?"*
+- *"How stale is the median AI model's training data?"*
+- *"What share of models ship with long context, and how rare are reasoning models?"*
 - *"Give me a market overview of AI inference pricing"*
 
 ---
