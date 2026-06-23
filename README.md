@@ -50,7 +50,7 @@ Two complementary intelligence layers. Pricing tells you what inference costs; M
 | `list_vendors` | Free | All tracked vendors with country, region, channel type, and pricing page URLs |
 | `get_kpis` | Free | 9 pricing KPIs: output premium, caching discount, open-source discount, context window cost, model size spread, reasoning premium, platform discount, neocloud discount, caching availability |
 | `get_model_intelligence` | Free | 6 capability KPIs from model metadata: reasoning tier share, long-context saturation, frontier context ceiling, output ceiling spread, training cutoff lag, vendor modality breadth |
-| `get_index_benchmarks` | Free | AIPI price benchmarks across all 15 indexes |
+| `get_index_benchmarks` | Free | AIPI price benchmarks across all indexes |
 | `get_market_stats` | Tiered | Aggregate market intelligence: medians, quartiles, distributions, modality breakdown |
 | `search_models` | Tiered | Multi-filter search: modality, vendor, creator, open-source, price range, context window, parameters |
 | `get_model_detail` | Tiered | Full specs and pricing across all vendors for a single model |
