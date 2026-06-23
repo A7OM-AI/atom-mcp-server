@@ -190,11 +190,11 @@ Examples:
       title: "Get AIPI Index Benchmarks",
       description: `AIPI (ATOM Inference Price Index) — chained matched-model price benchmarks for AI inference.
 
-Returns 15 benchmark indexes across four categories:
-- Modality (6): Text, Multimodal, Image, Audio, Video, Voice — what does this type of inference cost?
-- Channel (4): Model Developers, Cloud Marketplaces, Inference Platforms, Neoclouds — where should you buy?
-- Tier (4): Frontier, Budget, Mid, Reasoning — what's the premium for capability?
-- Special (1): Open-Source — how much cheaper is open-weight inference?
+Returns benchmark indexes across four categories:
+- Modality: Text, Multimodal, Image, Audio, Video, Voice, Embeddings - what does this type of inference cost?
+- Channel: Model Developers, Cloud Marketplaces, Inference Platforms, Neoclouds - where should you buy?
+- Tier: Frontier, Budget, Mid, Reasoning - what's the premium for capability?
+- Special: Open-Source - how much cheaper is open-weight inference?
 
 Each index includes input, cached input, and output pricing per period.
 
