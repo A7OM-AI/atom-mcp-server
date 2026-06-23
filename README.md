@@ -32,7 +32,7 @@ The AIPI index family spans four categories, all calculated weekly using chained
 
 | Category | Examples | What It Answers |
 |----------|----------|-----------------|
-| **Modality** | Text, Multimodal, Image, Audio, Video, Voice | What does this type of inference cost? |
+| **Modality** | Text, Multimodal, Image, Audio, Video, Voice, Embeddings | What does this type of inference cost? |
 | **Channel** | Model Developers, Cloud Marketplaces, Inference Platforms, Neoclouds | Where should you buy: direct, marketplace, platform, or neocloud? |
 | **Tier** | Frontier, Budget, Mid-Tier, Reasoning | What is the premium for capability? |
 | **Special** | Open-Source | How much cheaper is open-weight inference? |
