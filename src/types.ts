@@ -1,5 +1,5 @@
 // ============================================================
-// ATOM MCP Server — Type Definitions
+// Attic Standard MCP Server — Type Definitions
 // ============================================================
 
 /** Access tier for API consumers */
@@ -24,6 +24,9 @@ export interface VendorRegistry {
   vendor_url: string | null;
   pricing_page_url: string | null;
   model_specifications_url: string | null;
+  vendor_type: string | null;
+  parent_vendor: string | null;
+  status: string | null;
 }
 
 export interface ModelRegistry {
@@ -45,6 +48,12 @@ export interface ModelRegistry {
   null_reasons: Record<string, string> | null;
   last_verified: string | null;
   tier: string | null;
+  license_type: string | null;
+  license_class: string | null;
+  canonical_model_id: string | null;
+  is_reasoning: boolean | null;
+  creator_country: string | null;
+  task_category: string | null;
 }
 
 export interface SkuIndex {
@@ -66,9 +75,6 @@ export interface SkuIndex {
   pricing_notes: string | null;
   verification_date: string | null;
   run_id: string | null;
-  aipi_eligible: boolean | null;
-  aipi_indexes: string | null;
-  exclusion_reason: string | null;
 }
 
 export interface PriceIndex {
@@ -128,16 +134,6 @@ export interface PricingIntel {
 // ------------------------------------------------------------
 // Tool response helpers
 // ------------------------------------------------------------
-
-export interface RedactedModel {
-  model_id: string;
-  modality: string;
-  direction: string;
-  // Redacted fields
-  vendor_name: "[UPGRADE TO ATOM MCP Pro — $49/mo]";
-  model_name: "[UPGRADE TO ATOM MCP Pro — $49/mo]";
-  normalized_price: "[UPGRADE TO ATOM MCP Pro — $49/mo]";
-}
 
 export interface ToolContext {
   tier: Tier;

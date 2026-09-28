@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // ============================================================
-// ATOM MCP Server — Entry Point
+// Attic Standard MCP Server — Entry Point
 // ============================================================
 // Dual transport: stdio (local) and Streamable HTTP (remote).
 // Set TRANSPORT=http for HTTP mode, default is stdio.
@@ -9,6 +9,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import express from "express";
 import { createServer } from "./server.js";
+import { SERVER_NAME, SERVER_VERSION } from "./config.js";
 // ----------------------------------------------------------
 // stdio transport (for Cursor, Claude Desktop, etc.)
 // ----------------------------------------------------------
@@ -16,7 +17,7 @@ async function runStdio(): Promise<void> {
   const server = createServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("ATOM MCP Server running via stdio");
+  console.error("Attic Standard MCP Server running via stdio");
 }
 // ----------------------------------------------------------
 // Streamable HTTP transport (for hosted / remote access)
@@ -38,8 +39,8 @@ async function runHTTP(): Promise<void> {
   app.get("/health", (_req, res) => {
     res.json({
       status: "ok",
-      server: "atom-mcp-server",
-      version: "1.0.0",
+      server: SERVER_NAME,
+      version: SERVER_VERSION,
     });
   });
 
@@ -72,7 +73,7 @@ async function runHTTP(): Promise<void> {
 
   const port = parseInt(process.env.PORT || "3000", 10);
   app.listen(port, () => {
-    console.error(`ATOM MCP Server running on http://localhost:${port}/mcp`);
+    console.error(`Attic Standard MCP Server running on http://localhost:${port}/mcp`);
     console.error(`Health check: http://localhost:${port}/health`);
   });
 }
@@ -83,12 +84,12 @@ async function runHTTP(): Promise<void> {
 const transport = process.env.TRANSPORT || "stdio";
 if (transport === "http") {
   runHTTP().catch((error) => {
-    console.error("ATOM MCP Server HTTP error:", error);
+    console.error("Attic Standard MCP Server HTTP error:", error);
     process.exit(1);
   });
 } else {
   runStdio().catch((error) => {
-    console.error("ATOM MCP Server stdio error:", error);
+    console.error("Attic Standard MCP Server stdio error:", error);
     process.exit(1);
   });
 }

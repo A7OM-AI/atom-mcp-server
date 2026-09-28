@@ -1,122 +1,154 @@
 // ============================================================
 // Tool: get_index_benchmarks
-// AIPI index benchmarks — public market intelligence.
+// Latest published level and spot price for every Attic Standard
+// index, at the week the site shows (site_config gate).
+// Fully public: this is what atticstandard.com publishes.
 // ============================================================
 
 import { z } from "zod";
-import { enc, queryTable } from "../supabase.js";
-import type { Tier, IndexValues } from "../types.js";
+import { enc, getActiveDate, inList, queryTable } from "../supabase.js";
+import { BENCHMARK_NOTE, INDEX_FAMILIES, METHODOLOGY_PAGE } from "../config.js";
+import { dirKey, errorResult, normIndexCode, respond, round } from "../util.js";
+import type { Tier } from "../types.js";
 
 export const getIndexBenchmarksSchema = {
   index_code: z
     .string()
     .optional()
-    .describe(
-      "Filter by specific AIPI index code, e.g. 'AIPI TXT GLB', 'AIPI DEV GLB', 'AIPI OSS GLB'. Omit to see all indexes."
-    ),
+    .describe("One index, e.g. 'TXT', 'NCL', 'FLG' or the full code 'AIPI TXT GLB'. Omit for all published indexes."),
   index_category: z
     .string()
     .optional()
-    .describe(
-      "Filter by index category: 'Modality', 'Channel', 'Tier', 'Special'"
-    ),
-  limit: z
-    .coerce.number()
-    .int()
-    .min(1)
-    .max(100)
-    .default(25)
-    .describe("Maximum results to return (default 25)"),
+    .describe(`Index family: ${INDEX_FAMILIES.map((f) => `'${f}'`).join(", ")}.`),
 };
+
+interface RegistryRow {
+  index_code: string;
+  index_category: string;
+  index_description: string | null;
+  index_definition: string | null;
+  index_question: string | null;
+  methodology_note: string | null;
+  unit: string | null;
+  display_order: number | null;
+  is_flagship: boolean | null;
+  parent_index: string | null;
+}
+
+export async function loadPublishedIndexes(filters: string[] = []): Promise<RegistryRow[]> {
+  return queryTable<RegistryRow>("index_registry", ["is_published=is.true", ...filters], {
+    select:
+      "index_code,index_category,index_description,index_definition,index_question,methodology_note,unit,display_order,is_flagship,parent_index",
+    order: "display_order.asc",
+    limit: 200,
+  });
+}
+
+/** Latest index_values date at or before the gate. */
+export async function latestIndexDate(gate: string | null): Promise<string | null> {
+  const rows = await queryTable<{ date: string }>(
+    "index_values",
+    gate ? [`date=lte.${enc(gate)}`] : [],
+    { select: "date", order: "date.desc", limit: 1 }
+  );
+  return rows[0]?.date ? String(rows[0].date).slice(0, 10) : null;
+}
 
 export async function handleGetIndexBenchmarks(
   params: z.infer<z.ZodObject<typeof getIndexBenchmarksSchema>>,
   tier: Tier
 ) {
-  // Index benchmarks are fully public — no tier gating
-  const filters: string[] = [];
-  if (params.index_code && params.index_code.trim() !== "")
-    filters.push(`index_code=eq.${enc(params.index_code.trim())}`);
-  if (
-    params.index_category &&
-    params.index_category.trim() !== "" &&
-    params.index_category !== "(any)"
-  )
-    filters.push(`index_category=ilike.*${enc(params.index_category)}*`);
+  const regFilters: string[] = [];
+  if (params.index_code?.trim()) regFilters.push(`index_code=eq.${enc(normIndexCode(params.index_code))}`);
+  if (params.index_category?.trim() && params.index_category !== "(any)")
+    regFilters.push(`index_category=ilike.*${enc(params.index_category)}*`);
 
-  const rows = await queryTable<IndexValues>("index_values", filters, {
-    order: "date.desc,index_code.asc",
-    limit: params.limit,
+  const registry = await loadPublishedIndexes(regFilters);
+  if (registry.length === 0) {
+    return errorResult(
+      "get_index_benchmarks",
+      params.index_code
+        ? `No published index matches '${params.index_code}'. Omit index_code to list all published indexes.`
+        : "No published index matches that family."
+    );
+  }
+
+  const gate = await getActiveDate();
+  const date = await latestIndexDate(gate);
+  const codes = registry.map((r) => r.index_code);
+
+  const [values, levels] = await Promise.all([
+    queryTable<Record<string, any>>("index_values", [`date=eq.${enc(date || "")}`, `index_code=${inList(codes)}`], {
+      select:
+        "index_code,unit,sku_count,model_count,vendor_count,country_count,input_mom,cached_mom,output_mom,spot_input_price,spot_input_p25,spot_input_p75,spot_cached_price,spot_cached_p25,spot_cached_p75,spot_output_price,spot_output_p25,spot_output_p75,coverage_note",
+      limit: 500,
+    }),
+    queryTable<Record<string, any>>("v_index_rebased", [`date=eq.${enc(date || "")}`, `index_code=${inList(codes)}`], {
+      select: "index_code,direction,level,wow,price",
+      limit: 1000,
+    }),
+  ]);
+
+  const valueBy = new Map(values.map((v) => [v.index_code, v]));
+  const levelBy = new Map<string, Record<string, any>>();
+  for (const l of levels) {
+    const k = dirKey(l.direction);
+    const entry = levelBy.get(l.index_code) || {};
+    entry[k] = {
+      level: round(l.level, 2),
+      change_wow_pct: round(l.wow, 2),
+      change_vs_base_pct: l.level != null ? round(Number(l.level) - 100, 2) : null,
+    };
+    levelBy.set(l.index_code, entry);
+  }
+
+  const spot = (v: Record<string, any> | undefined, d: "input" | "cached" | "output") => {
+    if (!v || v[`spot_${d}_price`] == null) return null;
+    return {
+      median: Number(v[`spot_${d}_price`]),
+      p25: v[`spot_${d}_p25`] != null ? Number(v[`spot_${d}_p25`]) : null,
+      p75: v[`spot_${d}_p75`] != null ? Number(v[`spot_${d}_p75`]) : null,
+    };
+  };
+
+  const indexes = registry.map((r) => {
+    const v = valueBy.get(r.index_code);
+    const bench = levelBy.get(r.index_code) || {};
+    for (const d of ["input", "cached", "output"] as const) {
+      if (bench[d] && v && v[`${d}_mom`] != null) bench[d].change_mom_pct = round(v[`${d}_mom`], 2);
+    }
+    return {
+      index_code: r.index_code,
+      family: r.index_category,
+      flagship: !!r.is_flagship,
+      parent_index: r.parent_index || undefined,
+      description: r.index_description,
+      question: r.index_question || undefined,
+      unit: v?.unit || r.unit,
+      benchmark: bench,
+      spot: {
+        input: spot(v, "input"),
+        cached: spot(v, "cached"),
+        output: spot(v, "output"),
+      },
+      coverage: v
+        ? {
+            skus: v.sku_count ?? null,
+            models: v.model_count ?? null,
+            vendors: v.vendor_count ?? null,
+            countries: v.country_count ?? null,
+            note: v.coverage_note || undefined,
+          }
+        : null,
+    };
   });
 
-  if (rows.length === 0) {
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: JSON.stringify({
-            tool: "get_index_benchmarks",
-            error: params.index_code
-              ? `No index found for '${params.index_code}'. Omit index_code to see all available indexes.`
-              : "No index data available.",
-          }),
-        },
-      ],
-    };
-  }
-
-  // Extract unique index codes for summary
-  const indexCodes = [...new Set(rows.map((r) => r.index_code))];
-  const dates = [...new Set(rows.map((r) => r.date))].sort().reverse();
-
-  // Group by date for structured output
-  const byDate: Record<string, IndexValues[]> = {};
-  for (const row of rows) {
-    if (!byDate[row.date]) byDate[row.date] = [];
-    byDate[row.date].push(row);
-  }
-
-  // Format each entry
-  const formatted = rows.map((r) => ({
-    index_code: r.index_code,
-    index_category: r.index_category,
-    description: r.index_description,
-    date: r.date,
-    unit: r.unit,
-    input_price: r.input_price,
-    cached_price: r.cached_price,
-    output_price: r.output_price,
-    sku_count: r.sku_count,
-  }));
-
-  return {
-    content: [
-      {
-        type: "text" as const,
-        text: JSON.stringify(
-          {
-            tool: "get_index_benchmarks",
-            tier,
-            description:
-              "AIPI (ATOM Inference Price Index) — chained matched-model price benchmarks for AI inference.",
-            summary: {
-              total_indexes: indexCodes.length,
-              indexes_available: indexCodes,
-              date_range: {
-                latest: dates[0],
-                earliest: dates[dates.length - 1],
-                total_periods: dates.length,
-              },
-            },
-            benchmarks: formatted,
-            methodology:
-              "Chained matched-model index. Only SKUs present in consecutive periods are compared, eliminating composition bias. See https://a7om.com/methodology",
-            source: "https://a7om.com",
-          },
-          null,
-          2
-        ),
-      },
-    ],
-  };
+  return respond("get_index_benchmarks", tier, {
+    published_week: date,
+    total_indexes: indexes.length,
+    families: [...new Set(indexes.map((i) => i.family))],
+    indexes,
+    how_to_read: BENCHMARK_NOTE,
+    methodology: METHODOLOGY_PAGE,
+  });
 }

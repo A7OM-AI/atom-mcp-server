@@ -1,146 +1,111 @@
 // ============================================================
 // Tool: search_models
-// Multi-filter search across the SKU index.
+// Multi-filter search across every priced SKU. Model filters
+// (creator, tier, license, origin, reasoning, context) are read
+// from the model's anchor, so aliases are found too.
 // ============================================================
 
 import { z } from "zod";
-import { enc, queryTable } from "../supabase.js";
-import { gateResults, buildFreeTierSummary, freeTierNote } from "../auth.js";
-import type { Tier, SkuIndex, ModelRegistry } from "../types.js";
+import { enc, queryAll } from "../supabase.js";
+import { CHANNEL_LABELS } from "../config.js";
+import { gateResults } from "../auth.js";
+import { anchorOf, respond, vendorLookup } from "../util.js";
+import type { Tier, ModelRegistry } from "../types.js";
 
 export const searchModelsSchema = {
-  modality: z
-    .string()
-    .optional()
-    .describe("Filter by modality: Text, Image, Audio, Video, Voice, Multimodal, Embedding"),
-  vendor: z
-    .string()
-    .optional()
-    .describe("Filter by vendor name, e.g. 'OpenAI', 'Anthropic'"),
-  creator: z
-    .string()
-    .optional()
-    .describe("Filter by model creator/developer"),
-  model_family: z
-    .string()
-    .optional()
-    .describe("Filter by model family, e.g. 'GPT-4o', 'Claude 3.5'"),
-  open_source: z
-    .string()
-    .optional()
-    .describe("Filter by open-source status: 'true' or 'false'"),
-  direction: z
-    .enum(["Input", "Output", "Cached Input"])
-    .optional()
-    .describe("Filter by pricing direction"),
-  max_price: z
-    .coerce.number()
-    .optional()
-    .describe("Maximum normalized price (USD per unit)"),
-  min_context_window: z
-    .coerce.number()
-    .int()
-    .optional()
-    .describe("Minimum context window in tokens"),
-  min_parameter_count: z
-    .string()
-    .optional()
-    .describe("Minimum parameter count, e.g. '7B', '70B'"),
-  limit: z
-    .coerce.number()
-    .int()
-    .min(1)
-    .max(100)
-    .default(20)
-    .describe("Maximum results to return (default 20)"),
-  offset: z
-    .coerce.number()
-    .int()
-    .min(0)
-    .default(0)
-    .describe("Offset for pagination"),
+  modality: z.string().optional().describe("Text, Multimodal, Image, Video, Audio, Voice"),
+  vendor: z.string().optional().describe("Vendor name or id"),
+  channel: z.string().optional().describe("'Model developer', 'Cloud marketplace', 'Inference platform' or 'Neocloud'"),
+  creator: z.string().optional().describe("Model creator (the lab that built the model)"),
+  model_family: z.string().optional().describe("Model family, e.g. 'Llama', 'Qwen', 'Claude'"),
+  tier: z.string().optional().describe("Lineup tier: 'Flagship', 'Core' or 'Compact'"),
+  license: z.string().optional().describe("License class, e.g. 'open', 'restricted', 'proprietary'"),
+  origin: z.string().optional().describe("Creator's home country, e.g. 'United States', 'China'"),
+  reasoning: z.string().optional().describe("'true' for reasoning models only, 'false' to exclude them"),
+  open_source: z.string().optional().describe("'true' for models with published weights"),
+  direction: z.enum(["Input", "Output", "Cached Input"]).optional().describe("Pricing direction"),
+  max_price: z.coerce.number().optional().describe("Maximum price in the SKU's own unit (per 1,000 tokens for token models)"),
+  min_context_window: z.coerce.number().int().optional().describe("Minimum context window in tokens"),
+  limit: z.coerce.number().int().min(1).max(100).default(20).describe("Results to return (default 20)"),
+  offset: z.coerce.number().int().min(0).default(0).describe("Offset for paging"),
 };
 
-export async function handleSearchModels(
-  params: z.infer<z.ZodObject<typeof searchModelsSchema>>,
-  tier: Tier
-) {
-  // Build SKU-level filters
-  const skuFilters: string[] = [];
+const TIER_CODES: Record<string, string[]> = {
+  flagship: ["FLG", "FTR", "Flagship", "Frontier"],
+  core: ["COR", "MID", "Core", "Mid"],
+  compact: ["CMP", "BDG", "Compact", "Budget"],
+};
+
+export async function handleSearchModels(params: z.infer<z.ZodObject<typeof searchModelsSchema>>, tier: Tier) {
+  const skuFilters = ["normalized_price=gt.0"];
   if (params.modality) skuFilters.push(`modality=ilike.*${enc(params.modality)}*`);
   if (params.vendor) skuFilters.push(`vendor_name=ilike.*${enc(params.vendor)}*`);
   if (params.direction) skuFilters.push(`direction=eq.${enc(params.direction)}`);
-  if (params.max_price !== undefined)
-    skuFilters.push(`normalized_price=lte.${params.max_price}`);
-  skuFilters.push("normalized_price=gt.0");
+  if (params.max_price !== undefined) skuFilters.push(`normalized_price=lte.${params.max_price}`);
 
-  // Query SKU index
-  let skus = await queryTable<SkuIndex>("sku_index", skuFilters, {
+  let skus = await queryAll<Record<string, any>>("sku_index", skuFilters, {
     select:
       "sku_id,model_id,vendor_id,vendor_name,model_name,modality,modality_subtype,direction,normalized_price,normalized_price_unit,billing_method",
-    order: "normalized_price.asc",
-    limit: params.limit + 50, // extra buffer for model-level filtering
-    offset: params.offset,
+    order: "normalized_price.asc,sku_id.asc",
   });
 
-  // Apply model-level filters if needed
-  if (params.creator || params.model_family || params.open_source || params.min_context_window) {
-    const modelFilters: string[] = [];
-    if (params.creator) modelFilters.push(`creator=ilike.*${enc(params.creator)}*`);
-    if (params.model_family) modelFilters.push(`model_family=ilike.*${enc(params.model_family)}*`);
-    if (params.open_source !== undefined) {
-      const boolVal = params.open_source === "true";
-      modelFilters.push(`open_source=is.${boolVal}`);
-    }
-    if (params.min_context_window)
-      modelFilters.push(`context_window=gte.${params.min_context_window}`);
+  // Channel filter via vendor registry.
+  if (params.channel) {
+    const c = params.channel.trim().toLowerCase();
+    const vendors = await vendorLookup();
+    const keep = new Set(
+      [...vendors.entries()]
+        .filter(([, v]) => {
+          const code = String(v.vendor_type || "").toLowerCase();
+          const label = (CHANNEL_LABELS[v.vendor_type || ""] || "").toLowerCase();
+          return code === c || label.includes(c);
+        })
+        .map(([id]) => id)
+    );
+    skus = skus.filter((s) => keep.has(s.vendor_id));
+  }
 
-    const models = await queryTable<ModelRegistry>("model_registry", modelFilters, {
-      select: "model_id",
+  // Model filters via registry anchors.
+  const modelFilter =
+    params.creator || params.model_family || params.tier || params.license || params.origin ||
+    params.reasoning || params.open_source || params.min_context_window;
+  if (modelFilter) {
+    const registry = await queryAll<ModelRegistry>("model_registry", [], {
+      select:
+        "model_id,canonical_model_id,creator,model_family,tier,license_class,license_type,creator_country,is_reasoning,open_source,context_window",
+      order: "model_id.asc",
     });
+    const byId = new Map(registry.map((m) => [m.model_id, m]));
+    const has = (v: unknown, q?: string) => !q || String(v ?? "").toLowerCase().includes(q.toLowerCase());
+    const tierCodes = params.tier ? TIER_CODES[params.tier.toLowerCase()] || [params.tier] : null;
 
-    const modelIds = new Set(models.map((m) => m.model_id));
-    skus = skus.filter((s) => modelIds.has(s.model_id));
+    skus = skus.filter((s) => {
+      const own = byId.get(s.model_id);
+      if (!own) return false;
+      const m = byId.get(anchorOf(own)) || own;
+      if (!has(m.creator, params.creator)) return false;
+      if (!has(m.model_family, params.model_family)) return false;
+      if (!has(m.license_class ?? m.license_type, params.license)) return false;
+      if (!has(m.creator_country, params.origin)) return false;
+      if (tierCodes && !tierCodes.some((t) => String(m.tier || "").toLowerCase() === t.toLowerCase())) return false;
+      if (params.reasoning !== undefined && params.reasoning !== "" && !!m.is_reasoning !== (params.reasoning === "true")) return false;
+      if (params.open_source !== undefined && params.open_source !== "" && !!m.open_source !== (params.open_source === "true")) return false;
+      if (params.min_context_window && !((m.context_window || 0) >= params.min_context_window)) return false;
+      return true;
+    });
   }
 
-  // Trim to requested limit
-  const trimmed = skus.slice(0, params.limit);
+  const page = skus.slice(params.offset, params.offset + params.limit);
 
-  // Gate results based on tier
-  const gated = gateResults(
-    trimmed as unknown as Record<string, unknown>[],
-    tier
-  );
-
-  const content: { type: "text"; text: string }[] = [
+  return respond(
+    "search_models",
+    tier,
     {
-      type: "text" as const,
-      text: JSON.stringify(
-        {
-          tool: "search_models",
-          tier,
-          filters: {
-            modality: params.modality,
-            vendor: params.vendor,
-            creator: params.creator,
-            model_family: params.model_family,
-            open_source: params.open_source,
-            direction: params.direction,
-            max_price: params.max_price,
-          },
-          total_results: skus.length,
-          showing: trimmed.length,
-          results: gated,
-        },
-        null,
-        2
-      ),
+      filters: Object.fromEntries(Object.entries(params).filter(([k, v]) => v !== undefined && k !== "_atom_api_key")),
+      total_results: skus.length,
+      showing: page.length,
+      results: gateResults(page, tier),
     },
-  ];
-
-  if (tier === "free") {
-    content.push(freeTierNote("Full model search results with exact pricing"));
-  }
-
-  return { content };
+    "The full list of matching models with vendors and prices"
+  );
 }

@@ -1,60 +1,53 @@
 // ============================================================
 // Tool: list_vendors
-// All tracked vendors with metadata. Simple discovery tool.
+// Every vendor in the Attic Standard fleet with its channel.
 // ============================================================
 
 import { z } from "zod";
-import { enc, queryTable } from "../supabase.js";
+import { enc, queryAll } from "../supabase.js";
+import { CHANNEL_LABELS } from "../config.js";
+import { respond } from "../util.js";
 import type { Tier, VendorRegistry } from "../types.js";
 
 export const listVendorsSchema = {
-  region: z
+  channel: z
     .string()
     .optional()
-    .describe("Optionally filter by region: 'North America', 'Europe', 'Asia', etc."),
-  country: z
-    .string()
-    .optional()
-    .describe("Optionally filter by country, e.g. 'United States', 'China', 'France'"),
+    .describe("Optional channel: 'Model developer' (DEV), 'Cloud marketplace' (CLD), 'Inference platform' (PLT), 'Neocloud' (NCL)"),
+  region: z.string().optional().describe("Optional region, e.g. 'North America', 'Europe', 'Asia'"),
+  country: z.string().optional().describe("Optional country, e.g. 'United States', 'China', 'France'"),
 };
 
-export async function handleListVendors(
-  params: z.infer<z.ZodObject<typeof listVendorsSchema>>,
-  tier: Tier
-) {
+export async function handleListVendors(params: z.infer<z.ZodObject<typeof listVendorsSchema>>, tier: Tier) {
   const filters: string[] = [];
   if (params.region) filters.push(`region=ilike.*${enc(params.region)}*`);
   if (params.country) filters.push(`country=ilike.*${enc(params.country)}*`);
 
-  const vendors = await queryTable<VendorRegistry>("vendor_registry", filters, {
+  let vendors = await queryAll<VendorRegistry>("vendor_registry", filters, {
+    select: "vendor_id,vendor_name,vendor_type,parent_vendor,country,region,vendor_url,pricing_page_url,status",
     order: "vendor_name.asc",
   });
+  vendors = vendors.filter((v) => !v.status || String(v.status).toLowerCase() === "active");
 
-  // Vendor list is public info — no gating needed.
+  if (params.channel) {
+    const c = params.channel.trim().toLowerCase();
+    vendors = vendors.filter((v) => {
+      const code = String(v.vendor_type || "").toLowerCase();
+      const label = (CHANNEL_LABELS[v.vendor_type || ""] || "").toLowerCase();
+      return code === c || label.includes(c) || code.includes(c);
+    });
+  }
+
   const formatted = vendors.map((v) => ({
     vendor_id: v.vendor_id,
     name: v.vendor_name,
+    channel: CHANNEL_LABELS[v.vendor_type || ""] || v.vendor_type,
+    parent: v.parent_vendor || undefined,
     country: v.country,
     region: v.region,
     pricing_page: v.pricing_page_url,
     website: v.vendor_url,
   }));
 
-  return {
-    content: [
-      {
-        type: "text" as const,
-        text: JSON.stringify(
-          {
-            tool: "list_vendors",
-            tier,
-            total: formatted.length,
-            vendors: formatted,
-          },
-          null,
-          2
-        ),
-      },
-    ],
-  };
+  return respond("list_vendors", tier, { total: formatted.length, vendors: formatted });
 }

@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "atom-pricing": {
+    "attic-standard": {
       "command": "npx",
       "args": ["mcp-remote", "https://atom-mcp-server-production.up.railway.app/mcp"]
     }

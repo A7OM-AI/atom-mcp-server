@@ -1,10 +1,14 @@
 // ============================================================
-// ATOM MCP Server — Authentication & Tier Gating
+// Attic Standard MCP Server — Authentication and tier gating
+// ============================================================
+// Free tier: what atticstandard.com publishes (indexes, KPIs,
+// aggregates, counts). PRO: vendor- and SKU-level detail.
+// The paid check reads active keys from the api_keys table.
 // ============================================================
 import type { Tier } from "./types.js";
 import { queryTable } from "./supabase.js";
+import { PRO_NAME, PRO_PRICE, MCP_PAGE, UPGRADE_LABEL, UPGRADE_MESSAGE } from "./config.js";
 
-// Cache valid keys in memory (refreshed every 5 minutes)
 let cachedKeys: Set<string> = new Set();
 let lastFetch = 0;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -15,105 +19,81 @@ async function loadKeys(): Promise<Set<string>> {
     return cachedKeys;
   }
   try {
-    const rows = await queryTable<{ key_id: string }>(
-      "api_keys",
-      ["active=eq.true"],
-      { select: "key_id" }
-    );
+    const rows = await queryTable<{ key_id: string }>("api_keys", ["active=eq.true"], {
+      select: "key_id",
+    });
     cachedKeys = new Set(rows.map((r) => r.key_id));
     lastFetch = now;
   } catch (err) {
-    console.error("ATOM MCP: Failed to load API keys from Supabase:", err);
-    // Keep using cached keys if fetch fails
+    console.error("MCP: failed to load API keys:", err);
   }
   return cachedKeys;
 }
 
-/**
- * Determine the access tier from an API key.
- * No key or invalid key = free tier.
- */
+/** No key or an unknown key means free tier. */
 export async function resolveTier(apiKey?: string): Promise<Tier> {
   if (!apiKey) return "free";
   const keys = await loadKeys();
   return keys.has(apiKey.trim()) ? "paid" : "free";
 }
 
-/**
- * Redact sensitive pricing fields for free-tier users.
- * Shows structure but hides vendor, model, and price.
- */
+const DEFAULT_REDACT = [
+  "vendor_name",
+  "vendor_id",
+  "model_name",
+  "model_id",
+  "sku_id",
+  "sku_plan_name",
+  "normalized_price",
+  "original_price",
+  "anchor_id",
+];
+
+/** Replace vendor, model and price fields with the upgrade label. */
 export function redactForFreeTier(
   rows: Record<string, unknown>[],
-  fieldsToRedact: string[] = ["vendor_name", "model_name", "normalized_price", "sku_id", "model_id", "vendor_id", "sku_plan_name"]
+  fieldsToRedact: string[] = DEFAULT_REDACT
 ): Record<string, unknown>[] {
-  const REDACTED = "[UPGRADE TO ATOM MCP Pro — $49/mo]";
   return rows.map((row) => {
     const redacted = { ...row };
     for (const field of fieldsToRedact) {
-      if (field in redacted) {
-        redacted[field] = REDACTED;
-      }
+      if (field in redacted) redacted[field] = UPGRADE_LABEL;
     }
     return redacted;
   });
 }
 
-/**
- * Build a free-tier summary: count + price range (no individual records).
- */
-export function buildFreeTierSummary(rows: Record<string, unknown>[]): {
-  total_results: number;
-  price_range: { min: number | null; max: number | null };
-  modalities: string[];
-  directions: string[];
-  upgrade_message: string;
-} {
+/** Free-tier summary: count and price range, no individual records. */
+export function buildFreeTierSummary(rows: Record<string, unknown>[]) {
   const prices = rows
     .map((r) => r.normalized_price as number)
-    .filter((p): p is number => p !== null && p > 0);
-  const modalities = [...new Set(rows.map((r) => r.modality as string).filter(Boolean))];
-  const directions = [...new Set(rows.map((r) => r.direction as string).filter(Boolean))];
+    .filter((p): p is number => typeof p === "number" && p > 0);
   return {
     total_results: rows.length,
     price_range: {
       min: prices.length > 0 ? Math.min(...prices) : null,
       max: prices.length > 0 ? Math.max(...prices) : null,
     },
-    modalities,
-    directions,
-    upgrade_message:
-      "Full vendor, model, and pricing details require an ATOM MCP Pro ($49/mo). Visit https://a7om.com/mcp",
+    units: [...new Set(rows.map((r) => r.normalized_price_unit as string).filter(Boolean))],
+    modalities: [...new Set(rows.map((r) => r.modality as string).filter(Boolean))],
+    directions: [...new Set(rows.map((r) => r.direction as string).filter(Boolean))],
   };
 }
 
-/**
- * Returns an additional content block for free-tier responses.
- * This plain-text note ensures the AI assistant surfaces the upgrade path.
- */
-export function freeTierNote(toolContext: string): {
-  type: "text";
-  text: string;
-} {
+/** Plain-text note so the assistant surfaces the upgrade path. */
+export function freeTierNote(toolContext: string): { type: "text"; text: string } {
   return {
     type: "text" as const,
-    text: `Note: The data above is summary-level only (counts, ranges, and redacted samples). ${toolContext} — including exact vendor names, model names, and per-SKU pricing — is available exclusively through ATOM MCP Pro ($49/mo). Learn more and subscribe at https://a7om.com/mcp`,
+    text: `Note: this is the free tier (counts, ranges and redacted samples). ${toolContext}, with exact vendor names, model names and per-SKU prices, is available in ${PRO_NAME} (${PRO_PRICE}). ${MCP_PAGE}`,
   };
 }
 
-/**
- * Gate a full result set based on tier.
- * Paid tier gets everything. Free tier gets redacted + summary.
- */
-export function gateResults(
-  rows: Record<string, unknown>[],
-  tier: Tier
-): unknown {
-  if (tier === "paid") {
-    return rows;
-  }
+/** Paid tier gets every row; free tier gets a summary and a redacted sample. */
+export function gateResults(rows: Record<string, unknown>[], tier: Tier): unknown {
+  if (tier === "paid") return rows;
   return {
     summary: buildFreeTierSummary(rows),
-    sample: redactForFreeTier(rows.slice(0, 5)),
+    sample: redactForFreeTier(rows.slice(0, 3)),
+    upgrade: UPGRADE_MESSAGE,
   };
 }

@@ -6,6 +6,7 @@
 import { z } from "zod";
 import { queryTable } from "../supabase.js";
 import type { Tier } from "../types.js";
+import { SITE } from "../config.js";
 
 export const getModelIntelligenceSchema = {};
 
@@ -50,9 +51,9 @@ export async function handleGetModelIntelligence(
             tool: "get_model_intelligence",
             tier,
             description:
-              "ATOM Model Intelligence — capability and coverage KPIs derived from the metadata behind every model we track. Complements the pricing KPIs in get_kpis.",
+              "Attic Standard model intelligence: capability and coverage measures drawn from the metadata behind every tracked model. Read alongside the market KPIs in get_kpis.",
             kpis,
-            source: "https://a7om.com",
+            source: SITE,
           },
           null,
           2

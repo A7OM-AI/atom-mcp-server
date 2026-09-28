@@ -1,19 +1,19 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.A7OM-AI/atom-mcp-server",
-  "title": "ATOM Pricing Intelligence",
-  "description": "The Global Price Benchmark for AI Inference. Live pricing intelligence delivered as a native tool for AI agents, powered by the AIPI index family.",
+  "title": "Attic Standard",
+  "description": "The global price benchmark for AI inference: price indexes, market KPIs and SKU-level prices as native tools for AI agents.",
   "repository": {
     "url": "https://github.com/A7OM-AI/atom-mcp-server",
     "source": "github"
   },
-  "version": "1.1.2",
-  "websiteUrl": "https://a7om.com/mcp",
+  "version": "2.0.0",
+  "websiteUrl": "https://atticstandard.com/mcp",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "atom-mcp-server",
-      "version": "1.1.2",
+      "version": "2.0.0",
       "transport": {
         "type": "stdio"
       }
@@ -21,7 +21,7 @@
   ],
   "remotes": [
     {
-      "type": "sse",
+      "type": "streamable-http",
       "url": "https://atom-mcp-server-production.up.railway.app/mcp"
     }
   ]

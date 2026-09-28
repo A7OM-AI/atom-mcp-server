@@ -1,113 +1,109 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/StamatiosKanellakis/A7OM/main/ATOM_Logo_Gray.png" alt="ATOM" width="200" />
-</p>
-
-<h1 align="center">ATOM MCP Server</h1>
+<h1 align="center">Attic Standard MCP Server</h1>
 
 <p align="center">
-  <strong>The Global Price Benchmark for AI Inference, delivered as a native tool for AI agents.</strong><br/>
-  Independent pricing intelligence for developers, analysts, and infrastructure buyers. Transparent methodology, deterministic indexing, weekly market intelligence across the global AI inference market.
+  <strong>The Global Price Benchmark for AI Inference, as a native tool for AI agents.</strong><br/>
+  One number both sides trust.
 </p>
 
 <p align="center">
-  <a href="https://a7om.com">Website</a> ·
-  <a href="https://a7om.com/about">About ATOM</a> ·
-  <a href="https://a7om.com/methodology">Methodology</a> ·
-  <a href="https://a7om.com/mcp">ATOM MCP Pro</a>
+  <a href="https://atticstandard.com">Website</a> ·
+  <a href="https://atticstandard.com/methodology">Methodology</a> ·
+  <a href="https://atticstandard.com/mcp">MCP PRO</a>
 </p>
 
 ---
 
-## What This Is
+## What this is
 
-ATOM MCP Server lets any MCP-compatible AI agent (Claude, GPT, Cursor, Windsurf, VS Code Copilot) query live AI inference pricing data programmatically. Built on financial index methodology comparable to S&P Dow Jones, MSCI, and Bloomberg, the ATOM Inference Price Index (AIPI) is the first independent benchmark for the AI inference market.
+Attic Standard is the independent price reporting agency for AI inference. Every week it records the published prices of model developers, cloud marketplaces, inference platforms and neoclouds, and turns them into price indexes and market KPIs.
 
-Ask your AI assistant a question like *"What's the cheapest way to run GPT-4o?"* and it calls ATOM's tools behind the scenes, returning a data-backed answer pulled from live coverage across the global vendor landscape.
+This server puts that data inside any MCP-compatible assistant (Claude, ChatGPT, Cursor, Windsurf, VS Code). Ask *"Where is text inference priced this week?"* or *"Cheapest place to run Llama 3.3 70B?"* and the assistant answers from the published benchmark instead of guessing.
 
 ---
 
-## AIPI Indexes
+## The indexes
 
-The AIPI index family spans four categories, all calculated weekly using chained matched-model methodology to eliminate composition bias:
+23 published indexes in six families, each reported for input, cached input and output where the modality has them.
 
-| Category | Examples | What It Answers |
-|----------|----------|-----------------|
-| **Modality** | Text, Multimodal, Image, Audio, Video, Voice, Embeddings | What does this type of inference cost? |
-| **Channel** | Model Developers, Cloud Marketplaces, Inference Platforms, Neoclouds | Where should you buy: direct, marketplace, platform, or neocloud? |
-| **Tier** | Frontier, Budget, Mid-Tier, Reasoning | What is the premium for capability? |
-| **Special** | Open-Source | How much cheaper is open-weight inference? |
+| Family | Indexes | What it answers |
+|---|---|---|
+| **Modality** | Text, Multimodal, Image (per image), Image (per megapixel), Video (per second), Video (per clip), Audio, Voice, Embeddings | What does this kind of inference cost? |
+| **Channel** | Model developers, Cloud marketplaces, Inference platforms, Neoclouds | Where is it cheapest to buy? |
+| **Tier** | Flagship, Core, Compact | What does a place higher in a maker's lineup cost? |
+| **License** | Open weights, Restricted weights, Proprietary | What is the price of openness? |
+| **Origin** | United States, China | How do the two model-building countries price? |
+| **Use case** | Reasoning, Coding | What do specialist models cost? |
 
-All indexes are global (GLB) and reported across three pricing directions: input, cached input, output.
+Each index carries two numbers:
+
+- **Benchmark**: the chained level, May 2026 = 100 (the average of that month's weeks), with week, month and vs-base changes.
+- **Spot**: what the market charges this week, in dollars. Each model is taken at the median of its vendors' prices, and the spot is the median across those models, with the interquartile range.
+
+Token prices are per 1,000 tokens. Other modalities use their own unit.
 
 ---
 
 ## Tools
 
-Two complementary intelligence layers. Pricing tells you what inference costs; Model Intelligence tells you what you are paying for.
-
-| Tool | Tier | Description |
-|------|------|-------------|
-| `list_vendors` | Free | All tracked vendors with country, region, channel type, and pricing page URLs |
-| `get_kpis` | Free | 9 pricing KPIs: output premium, caching discount, open-source discount, context window cost, model size spread, reasoning premium, platform discount, neocloud discount, caching availability |
-| `get_model_intelligence` | Free | 6 capability KPIs from model metadata: reasoning tier share, long-context saturation, frontier context ceiling, output ceiling spread, training cutoff lag, vendor modality breadth |
-| `get_index_benchmarks` | Free | AIPI price benchmarks across all indexes |
-| `get_market_stats` | Tiered | Aggregate market intelligence: medians, quartiles, distributions, modality breakdown |
-| `search_models` | Tiered | Multi-filter search: modality, vendor, creator, open-source, price range, context window, parameters |
-| `get_model_detail` | Tiered | Full specs and pricing across all vendors for a single model |
-| `compare_prices` | Tiered | Cross-vendor price comparison for a model or model family |
-| `get_vendor_catalog` | Tiered | Complete catalog for a specific vendor |
-
----
-
-## Pricing Tiers
-
-| | ATOM MCP (Free) | ATOM MCP Pro |
+| Tool | Tier | What it returns |
 |---|---|---|
-| Vendors, KPIs, Model Intelligence, AIPI indexes | Full data | Full data |
-| Market stats | Aggregates only | Vendor-level breakdown |
-| Model search and comparison | Counts and price ranges | Full granular SKU data |
-| Model detail | Specs only | Per-vendor pricing |
-| Vendor catalog | Summary only | Full SKU listing |
-
-**Free tier** (no API key): enough to understand the market through counts, ranges, distributions, benchmarks, and capability metrics.
-
-**ATOM MCP Pro**: full granular data across every vendor, model, price, and spec. Subscribe at [a7om.com/mcp](https://a7om.com/mcp).
+| `get_index_benchmarks` | Free | Every published index at the current week: benchmark level, changes, spot price and range, coverage |
+| `get_price_history` | Free / PRO | Weekly index series (free); week-by-week price of a model at every vendor, with each repricing (PRO) |
+| `get_kpis` | Free | The nine market KPIs: output premium, caching discount, caching availability, repricing activity, repricing depth, post-launch drift, multi-vendor spread, first-party premium, marketplace premium |
+| `get_model_intelligence` | Free | Six capability measures: reasoning tier share, long-context saturation, context ceiling, output ceiling spread, training cutoff lag, vendor modality breadth |
+| `get_index_constituents` | Free / PRO | What is inside an index basket: composition by channel, origin, tier and license (free); model-by-model basket with vendors (PRO) |
+| `get_market_stats` | Free / PRO | Coverage (vendors by channel, models, SKUs, indexes) and price distributions by modality, unit and direction; vendor breakdown on PRO |
+| `list_vendors` | Free | The vendor fleet with channel, country and pricing page |
+| `search_models` | Free / PRO | Search every priced SKU by modality, vendor, channel, creator, family, tier, license, origin, reasoning, price and context |
+| `get_model_detail` | Free / PRO | One model's specs, the indexes it belongs to, and its price at every vendor |
+| `compare_prices` | Free / PRO | One model or family across all vendors: cheapest, dearest and spread per direction, with every offer on PRO |
+| `get_vendor_catalog` | Free / PRO | One vendor's channel, coverage and full price list |
 
 ---
 
-## Quick Start
+## Free and PRO
 
-### Option 1: Remote URL for Claude.ai and Claude Desktop (recommended)
+| | Free | MCP PRO |
+|---|---|---|
+| Indexes, index history, market KPIs, model intelligence | Full | Full |
+| Vendor list and market coverage | Full | Full |
+| Index baskets | Composition counts | Model and vendor detail |
+| Search, model detail, comparisons, catalogs, model price history | Counts, ranges, redacted samples | Vendor names, model names, exact prices |
+| Price | $0 | $500/month |
 
-No install required. Connect directly to ATOM's hosted server.
+The free tier carries everything atticstandard.com publishes. PRO adds the vendor- and SKU-level detail behind it. Subscribe at [atticstandard.com/mcp](https://atticstandard.com/mcp).
 
-**Claude.ai (web):** Settings → Connectors → Add custom connector
+---
+
+## Connect
+
+### Claude (web and desktop)
+
+Settings → Connectors → Add custom connector
 
 ```text
-Name: ATOM Pricing Intelligence
+Name: Attic Standard
 URL:  https://atom-mcp-server-production.up.railway.app/mcp
 ```
 
-**Claude Desktop:** Settings → Developer → Edit Config
+### Claude Desktop, Cursor, Windsurf (config file)
 
 ```json
 {
   "mcpServers": {
-    "atom-pricing": {
+    "attic-standard": {
       "url": "https://atom-mcp-server-production.up.railway.app/mcp"
     }
   }
 }
 ```
 
-> Note: Remote URL support requires a recent Claude Desktop version. If it does not work, use the npx method below.
-
-**Claude Desktop (via npx proxy):**
+If your client does not accept a remote URL, use the proxy:
 
 ```json
 {
   "mcpServers": {
-    "atom-pricing": {
+    "attic-standard": {
       "command": "npx",
       "args": ["mcp-remote", "https://atom-mcp-server-production.up.railway.app/mcp"]
     }
@@ -115,96 +111,47 @@ URL:  https://atom-mcp-server-production.up.railway.app/mcp
 }
 ```
 
-### Option 2: Local (stdio) for Cursor, Windsurf, and similar clients
+### PRO key
 
-```bash
-git clone https://github.com/A7OM-AI/atom-mcp-server.git
-cd atom-mcp-server
-npm install && npm run build
-```
-
-Add to your MCP client config:
-
-```json
-{
-  "mcpServers": {
-    "atom-pricing": {
-      "command": "node",
-      "args": ["/path/to/atom-mcp-server/dist/index.js"],
-      "env": {
-        "SUPABASE_URL": "https://jonncmzxvxzwyaznokba.supabase.co",
-        "SUPABASE_ANON_KEY": "your-anon-key"
-      }
-    }
-  }
-}
-```
-
-### Option 3: Deploy your own (Railway)
-
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template)
-
-Set environment variables in Railway dashboard:
-- `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
-- `ATOM_API_KEYS` (comma-separated, for paid tier validation)
-- `TRANSPORT=http`
+PRO subscribers receive a key. Tell your assistant to pass it as `_atom_api_key` on each call, or keep it in a project instruction such as *"Use my Attic Standard key XXXX for every Attic Standard tool call."*
 
 ---
 
-## Example Queries
+## Example questions
 
-Once connected, ask your AI assistant in natural language:
-
-- *"What's the cheapest way to run GPT-4o?"*
-- *"Compare Claude Sonnet 4.5 pricing across all vendors"*
-- *"Find open-source text models under $0.50 per million tokens"*
-- *"Show me Google's full model catalog"*
-- *"What are the AIPI benchmark prices for text inference?"*
-- *"How do neocloud prices compare to cloud marketplaces?"*
-- *"How much cheaper is open-source inference?"*
-- *"How stale is the median AI model's training data?"*
-- *"What share of models ship with long context, and how rare are reasoning models?"*
-- *"Give me a market overview of AI inference pricing"*
+- *"Where is text inference priced this week, and how has it moved since May?"*
+- *"Compare the four distribution channels."*
+- *"How much cheaper are open-weight models than proprietary ones?"*
+- *"What share of models dropped in price after launch?"*
+- *"What is inside the flagship index?"*
+- *"Cheapest place to run DeepSeek V3, and who repriced it this quarter?"* (PRO)
+- *"Everything one named vendor sells, with prices."* (PRO)
 
 ---
 
-## Environment Variables
+## Self-hosting
+
+The hosted server above is the supported way to connect. The code is open so you can see exactly what it reads and how it gates data.
 
 | Variable | Required | Description |
-|----------|----------|-------------|
-| `SUPABASE_URL` | Yes | Supabase project URL |
-| `SUPABASE_ANON_KEY` | Yes | Supabase anonymous/public key |
-| `ATOM_API_KEYS` | No | Comma-separated valid API keys for paid tier |
+|---|---|---|
+| `SUPABASE_URL` | Yes | Database URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes (hosted) | Server-side database key, set only in the host's environment |
 | `TRANSPORT` | No | `stdio` (default) or `http` |
 | `PORT` | No | HTTP port (default 3000) |
 
----
-
-## Tech Stack
-
-- TypeScript / Node.js
-- MCP SDK (`@modelcontextprotocol/sdk`)
-- Supabase (PostgreSQL) via REST API
-- Express (HTTP transport)
-- Zod (schema validation)
+Stack: TypeScript, Node.js, MCP SDK, Express, Zod, Supabase over REST.
 
 ---
 
-## About ATOM
+## About
 
-The Global Price Benchmark for AI Inference. Independent pricing intelligence for developers, analysts, and infrastructure buyers. Transparent methodology, deterministic indexing, weekly market intelligence across the global AI inference market.
+Attic Standard publishes the global price benchmark for AI inference: independent, methodology-led and updated weekly across the model developers, cloud marketplaces, inference platforms and neoclouds that sell inference. The name refers to the Attic silver-weight standard of the ancient Greek world, a common measure both sides of a trade accepted.
 
-ATOM was founded in 2025 by Stamos Kanellakis. The platform is built on financial index methodology comparable to S&P Dow Jones, MSCI, and Bloomberg, and applies that discipline to a market that previously had no pricing benchmark of its own.
+**Products:** [MCP](https://atticstandard.com/mcp) · [Terminal](https://atticstandard.com/terminal) · [Feed](https://atticstandard.com/feed)
 
-**Products:** [ATOM MCP](https://a7om.com/mcp) · [ATOM Terminal](https://a7om.com/terminal) · [ATOM Feed](https://a7om.com/feed)
-
----
+Contact: info@atticstandard.com
 
 ## License
 
 MIT
-
----
-
-<p align="center"><strong>ATOM</strong> · <em>The Global Price Benchmark for AI Inference.</em></p>

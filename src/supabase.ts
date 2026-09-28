@@ -1,5 +1,5 @@
 // ============================================================
-// ATOM MCP Server — Supabase REST Client
+// Attic Standard MCP Server — Supabase REST Client
 // ============================================================
 // Lightweight fetch-based client for Supabase PostgREST API.
 // No Supabase JS SDK dependency — keeps the binary small.
@@ -40,7 +40,7 @@ const headers: Record<string, string> = {
 interface QueryOptions {
   table: string;
   select?: string;
-  filters?: string[]; // PostgREST filter strings e.g. "vendor_name=eq.OpenAI"
+  filters?: string[]; // PostgREST filter strings e.g. "vendor_id=eq.some_vendor"
   order?: string; // e.g. "normalized_price.asc"
   limit?: number;
   offset?: number;
@@ -126,10 +126,68 @@ export async function queryTable<T>(
   return result.data;
 }
 
+/**
+ * Read every matching row, page by page, so results are never cut
+ * at the API's per-request row cap. Stops at maxRows.
+ */
+export async function queryAll<T>(
+  table: string,
+  filters: string[] = [],
+  options: Partial<QueryOptions> = {},
+  maxRows = 20000
+): Promise<T[]> {
+  const page = 1000;
+  const out: T[] = [];
+  for (let offset = 0; offset < maxRows; offset += page) {
+    const rows = await queryTable<T>(table, filters, { ...options, limit: page, offset });
+    out.push(...rows);
+    if (rows.length < page) break;
+  }
+  return out;
+}
+
 export async function queryView<T>(
   viewName: string,
   filters: string[] = [],
   options: Partial<QueryOptions> = {}
 ): Promise<T[]> {
   return queryTable<T>(viewName, filters, options);
+}
+
+// ------------------------------------------------------------
+// Filter helpers
+// ------------------------------------------------------------
+
+/** PostgREST in-list with quoted, encoded values: in.("a","b"). */
+export function inList(values: string[]): string {
+  const quoted = values.map((v) => `"${String(v).replace(/"/g, '\\"')}"`).join(",");
+  return `in.(${encodeURIComponent(quoted)})`;
+}
+
+// ------------------------------------------------------------
+// Publication gate (site_config.active_date, row id 1)
+// ------------------------------------------------------------
+
+let gateCache: { value: string | null; at: number } = { value: null, at: 0 };
+const GATE_TTL = 5 * 60 * 1000;
+
+/**
+ * The published gate date the live site shows. Everything the server
+ * returns is read at or before this date, so the MCP never shows a
+ * week the site has not published yet.
+ */
+export async function getActiveDate(): Promise<string | null> {
+  const now = Date.now();
+  if (gateCache.value && now - gateCache.at < GATE_TTL) return gateCache.value;
+  try {
+    const rows = await queryTable<{ active_date: string }>("site_config", ["id=eq.1"], {
+      select: "active_date",
+    });
+    const value = rows[0]?.active_date ? String(rows[0].active_date).slice(0, 10) : null;
+    gateCache = { value, at: now };
+    return value;
+  } catch (err) {
+    console.error("MCP: could not read site_config gate:", err);
+    return gateCache.value;
+  }
 }

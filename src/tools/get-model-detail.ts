@@ -1,119 +1,97 @@
 // ============================================================
 // Tool: get_model_detail
-// Deep dive on a single model — specs + pricing across vendors.
+// One model: specs from its anchor, index memberships, and its
+// price at every vendor (PRO) or a per-direction summary (free).
 // ============================================================
 
 import { z } from "zod";
-import { enc, queryTable } from "../supabase.js";
-import { gateResults, freeTierNote } from "../auth.js";
-import type { Tier, ModelRegistry, SkuIndex } from "../types.js";
+import { enc, inList, queryAll, queryTable } from "../supabase.js";
+import { CHANNEL_LABELS } from "../config.js";
+import { anchorOf, dirKey, errorResult, expandAnchors, findModels, MODEL_SELECT, respond, vendorLookup } from "../util.js";
+import type { Tier, ModelRegistry } from "../types.js";
 
 export const getModelDetailSchema = {
-  model_name: z
-    .string()
-    .describe("Model name to look up, e.g. 'GPT-4o', 'Claude Sonnet 4.5', 'Llama 3.1 70B'"),
+  model_name: z.string().describe("Model to look up, e.g. 'GPT-4o', 'Claude Sonnet 4.5', 'Llama 3.3 70B'"),
 };
 
-export async function handleGetModelDetail(
-  params: z.infer<z.ZodObject<typeof getModelDetailSchema>>,
-  tier: Tier
-) {
-  // Find model in registry (fuzzy match)
-  const models = await queryTable<ModelRegistry>("model_registry", [
-    `model_name=ilike.*${enc(params.model_name)}*`,
-  ], {
-    limit: 5,
-  });
+export async function handleGetModelDetail(params: z.infer<z.ZodObject<typeof getModelDetailSchema>>, tier: Tier) {
+  const matches = await findModels(params.model_name, 8);
+  if (matches.length === 0)
+    return errorResult("get_model_detail", `No model matches '${params.model_name}'. Try a shorter name such as 'GPT-4' or 'Llama'.`);
 
-  if (models.length === 0) {
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: JSON.stringify({
-            tool: "get_model_detail",
-            error: `No model found matching '${params.model_name}'. Try a partial name like 'GPT-4' or 'Claude'.`,
-          }),
-        },
-      ],
-    };
-  }
+  const anchorId = anchorOf(matches[0]);
+  const anchorRows =
+    anchorId === matches[0].model_id
+      ? [matches[0]]
+      : await queryTable<ModelRegistry>("model_registry", [`model_id=eq.${enc(anchorId)}`], { select: MODEL_SELECT, limit: 1 });
+  const m = anchorRows[0] || matches[0];
+  const ids = await expandAnchors([anchorId]);
 
-  const model = models[0];
+  const [skus, membership, vendors] = await Promise.all([
+    queryAll<Record<string, any>>("sku_index", [`model_id=${inList(ids)}`, "normalized_price=gt.0"], {
+      select: "sku_id,vendor_id,vendor_name,model_id,model_name,modality,modality_subtype,direction,normalized_price,normalized_price_unit,billing_method",
+      order: "normalized_price.asc,sku_id.asc",
+    }),
+    queryAll<{ index_code: string }>("index_membership_snapshot", [`model_id=${inList(ids)}`, "in_basket=is.true"], {
+      select: "index_code",
+      order: "index_code.asc",
+    }),
+    vendorLookup(),
+  ]);
 
-  // Get all SKUs for this model across vendors
-  const skus = await queryTable<SkuIndex>("sku_index", [
-    `model_id=eq.${enc(model.model_id)}`,
-  ], {
-    select: "sku_id,vendor_name,model_name,modality,modality_subtype,direction,normalized_price,normalized_price_unit,billing_method",
-    order: "normalized_price.asc",
-  });
-
-  // Build response
-  const modelSpecs = {
-    model_id: model.model_id,
-    model_name: model.model_name,
-    creator: model.creator,
-    model_family: model.model_family,
-    open_source: model.open_source,
-    parameter_count: model.parameter_count,
-    context_window: model.context_window,
-    max_output_tokens: model.max_output_tokens,
-    training_cutoff: model.training_cutoff,
-    modality_input: model.modality_input,
-    modality_output: model.modality_output,
-    tool_calling: model.tool_calling,
-    json_mode: model.json_mode,
-    streaming: model.streaming,
-    source_url: model.source_url,
+  const specs = {
+    anchor_model_id: m.model_id,
+    model_name: m.model_name,
+    creator: m.creator,
+    origin: m.creator_country,
+    family: m.model_family,
+    tier: m.tier,
+    license: m.license_class ?? m.license_type,
+    open_weights: m.open_source,
+    reasoning: m.is_reasoning,
+    task: m.task_category,
+    parameters: m.parameter_count,
+    context_window: m.context_window,
+    max_output_tokens: m.max_output_tokens,
+    training_cutoff: m.training_cutoff,
+    input_modalities: m.modality_input,
+    output_modalities: m.modality_output,
+    tool_calling: m.tool_calling,
+    json_mode: m.json_mode,
+    source: m.source_url,
+    aliases: ids.length - 1,
   };
 
-  let pricing: unknown;
-
-  if (tier === "paid") {
-    pricing = skus;
-  } else {
-    // Free tier: show count and redacted sample
-    const vendors = [...new Set(skus.map((s) => s.vendor_name))];
-    pricing = {
-      total_skus: skus.length,
-      vendors_offering: vendors.length,
-      modalities: [...new Set(skus.map((s) => s.modality))],
-      directions: [...new Set(skus.map((s) => s.direction))],
-      sample: gateResults(
-        skus.slice(0, 3) as unknown as Record<string, unknown>[],
-        "free"
-      ),
-      upgrade_message:
-        "Full vendor-by-vendor pricing requires ATOM MCP Pro ($49/mo). Visit https://a7om.com/mcp",
-    };
+  for (const s of skus) {
+    const t = vendors.get(s.vendor_id)?.vendor_type || null;
+    s.channel = t ? CHANNEL_LABELS[t] || t : null;
   }
 
-  // Additional matches (other models with similar names)
-  const additionalMatches = models.length > 1
-    ? models.slice(1).map((m) => m.model_name)
-    : [];
+  const summary: Record<string, any> = {};
+  for (const s of skus) {
+    const k = `${dirKey(s.direction)} (${s.normalized_price_unit})`;
+    const e = summary[k] || { skus: 0, vendors: new Set<string>(), cheapest: Infinity, dearest: 0 };
+    e.skus += 1;
+    e.vendors.add(s.vendor_id);
+    e.cheapest = Math.min(e.cheapest, s.normalized_price);
+    e.dearest = Math.max(e.dearest, s.normalized_price);
+    summary[k] = e;
+  }
+  for (const k of Object.keys(summary)) summary[k].vendors = summary[k].vendors.size;
 
-  const content: { type: "text"; text: string }[] = [
+  return respond(
+    "get_model_detail",
+    tier,
     {
-      type: "text" as const,
-      text: JSON.stringify(
-        {
-          tool: "get_model_detail",
-          tier,
-          model_specs: modelSpecs,
-          pricing,
-          additional_matches: additionalMatches,
-        },
-        null,
-        2
-      ),
+      model: specs,
+      in_indexes: [...new Set(membership.map((r) => r.index_code))],
+      pricing_summary: summary,
+      ...(tier === "paid" ? { offers: skus } : {}),
+      other_matches: matches
+        .slice(1)
+        .map((x) => x.model_name)
+        .filter((n) => n !== m.model_name),
     },
-  ];
-
-  if (tier === "free") {
-    content.push(freeTierNote("Detailed per-vendor pricing for this model"));
-  }
-
-  return { content };
+    "The price of this model at every vendor"
+  );
 }

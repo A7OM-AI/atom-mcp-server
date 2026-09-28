@@ -1,14 +1,14 @@
 {
   "name": "atom-mcp-server",
   "mcpName": "io.github.A7OM-AI/atom-mcp-server",
-  "version": "1.1.2",
-  "description": "ATOM Inference Price Index — AI pricing intelligence for agents and developers. 1,600+ SKUs, 40+ vendors, 14 AIPI indexes, 8 tools.",
+  "version": "2.0.0",
+  "description": "Attic Standard: the global price benchmark for AI inference, for agents. 23 price indexes, 9 market KPIs and SKU-level prices across 58 vendors, in 11 MCP tools.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
     "atom-mcp-server": "./dist/index.js"
   },
-  "homepage": "https://a7om.com/mcp",
+  "homepage": "https://atticstandard.com/mcp",
   "repository": {
     "type": "git",
     "url": "https://github.com/A7OM-AI/atom-mcp-server"
@@ -23,19 +23,19 @@
   },
   "keywords": [
     "mcp",
-    "ai",
-    "pricing",
-    "inference",
-    "llm",
     "model-context-protocol",
-    "atom",
-    "aipi",
+    "ai",
+    "inference",
+    "pricing",
+    "price-index",
+    "benchmark",
+    "llm",
     "ai-pricing",
     "inference-pricing",
     "finops",
-    "cost-optimization"
+    "attic-standard"
   ],
-  "author": "ATOM (A7OM) — Member One EOOD",
+  "author": "Attic Standard (Member One EOOD)",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.0",

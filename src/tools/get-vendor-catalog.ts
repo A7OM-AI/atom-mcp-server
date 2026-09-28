@@ -1,121 +1,65 @@
 // ============================================================
 // Tool: get_vendor_catalog
-// Everything a vendor offers: models, modalities, prices + metadata.
+// Everything one vendor sells, with prices (PRO) or a summary.
 // ============================================================
 
 import { z } from "zod";
-import { enc, queryTable } from "../supabase.js";
-import { gateResults, freeTierNote } from "../auth.js";
+import { enc, queryAll } from "../supabase.js";
+import { CHANNEL_LABELS } from "../config.js";
+import { gateResults } from "../auth.js";
+import { errorResult, respond } from "../util.js";
 import type { Tier, VendorRegistry } from "../types.js";
 
 export const getVendorCatalogSchema = {
-  vendor: z
-    .string()
-    .describe("Vendor name, e.g. 'OpenAI', 'Together AI', 'Amazon Bedrock'"),
-  modality: z
-    .string()
-    .optional()
-    .describe("Optionally filter by modality: Text, Image, Audio, Video, Voice, Multimodal"),
-  direction: z
-    .enum(["Input", "Output", "Cached Input"])
-    .optional()
-    .describe("Optionally filter by pricing direction"),
-  limit: z
-    .coerce.number()
-    .int()
-    .min(1)
-    .max(200)
-    .default(50)
-    .describe("Maximum results (default 50)"),
+  vendor: z.string().describe("Vendor name or id, as listed by list_vendors"),
+  modality: z.string().optional().describe("Optional modality: Text, Multimodal, Image, Video, Audio, Voice"),
+  direction: z.enum(["Input", "Output", "Cached Input"]).optional().describe("Optional pricing direction"),
+  limit: z.coerce.number().int().min(1).max(500).default(100).describe("Maximum SKUs (default 100)"),
 };
 
-export async function handleGetVendorCatalog(
-  params: z.infer<z.ZodObject<typeof getVendorCatalogSchema>>,
-  tier: Tier
-) {
-  // Get vendor metadata
-  const vendors = await queryTable<VendorRegistry>("vendor_registry", [
-    `vendor_name=ilike.*${enc(params.vendor)}*`,
-  ]);
+export async function handleGetVendorCatalog(params: z.infer<z.ZodObject<typeof getVendorCatalogSchema>>, tier: Tier) {
+  const term = params.vendor.trim().toLowerCase();
+  const all = await queryAll<VendorRegistry>("vendor_registry", [], {
+    select: "vendor_id,vendor_name,vendor_type,parent_vendor,country,region,vendor_url,pricing_page_url,status",
+    order: "vendor_name.asc",
+  });
+  const vendor =
+    all.find((v) => v.vendor_id.toLowerCase() === term || v.vendor_name.toLowerCase() === term) ||
+    all
+      .filter((v) => v.vendor_name.toLowerCase().includes(term) || v.vendor_id.toLowerCase().includes(term))
+      .sort((a, b) => a.vendor_name.length - b.vendor_name.length)[0];
+  if (!vendor) return errorResult("get_vendor_catalog", `No vendor matches '${params.vendor}'. Use list_vendors to see the fleet.`);
 
-  if (vendors.length === 0) {
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: JSON.stringify({
-            tool: "get_vendor_catalog",
-            error: `No vendor found matching '${params.vendor}'. Use list_vendors to see all available vendors.`,
-          }),
-        },
-      ],
-    };
-  }
+  const filters = [`vendor_id=eq.${enc(vendor.vendor_id)}`, "normalized_price=gt.0"];
+  if (params.modality) filters.push(`modality=ilike.*${enc(params.modality)}*`);
+  if (params.direction) filters.push(`direction=eq.${enc(params.direction)}`);
 
-  const vendor = vendors[0];
-
-  // Get all SKUs for this vendor
-  const skuFilters: string[] = [
-    `vendor_name=ilike.*${enc(params.vendor)}*`,
-  ];
-  if (params.modality) skuFilters.push(`modality=ilike.*${enc(params.modality)}*`);
-  if (params.direction) skuFilters.push(`direction=eq.${enc(params.direction)}`);
-
-  const skus = await queryTable<Record<string, unknown>>("sku_index", skuFilters, {
-    select: "sku_id,vendor_name,model_name,modality,modality_subtype,direction,normalized_price,normalized_price_unit,billing_method",
+  const skus = await queryAll<Record<string, any>>("sku_index", filters, {
+    select: "sku_id,model_id,model_name,modality,modality_subtype,direction,normalized_price,normalized_price_unit,billing_method",
     order: "model_name.asc,direction.asc",
-    limit: params.limit,
   });
 
-  // Build catalog summary
-  const models = [...new Set(skus.map((s) => s.model_name as string))];
-  const modalities = [...new Set(skus.map((s) => s.modality as string))];
-
-  const catalogSummary = {
+  const summary = {
     vendor_name: vendor.vendor_name,
+    channel: CHANNEL_LABELS[vendor.vendor_type || ""] || vendor.vendor_type,
+    parent: vendor.parent_vendor || undefined,
     country: vendor.country,
     region: vendor.region,
     pricing_page: vendor.pricing_page_url,
     website: vendor.vendor_url,
-    total_models: models.length,
-    total_skus: skus.length,
-    modalities,
+    models: new Set(skus.map((s) => s.model_id)).size,
+    skus: skus.length,
+    modalities: [...new Set(skus.map((s) => s.modality))],
   };
 
-  let catalog: unknown;
-
-  if (tier === "paid") {
-    catalog = {
-      summary: catalogSummary,
-      skus,
-    };
-  } else {
-    catalog = {
-      summary: catalogSummary,
-      sample: gateResults(skus.slice(0, 3), "free"),
-      upgrade_message:
-        "Full catalog with pricing requires ATOM MCP Pro ($49/mo). Visit https://a7om.com/mcp",
-    };
-  }
-
-  const content: { type: "text"; text: string }[] = [
+  return respond(
+    "get_vendor_catalog",
+    tier,
     {
-      type: "text" as const,
-      text: JSON.stringify(
-        {
-          tool: "get_vendor_catalog",
-          tier,
-          catalog,
-        },
-        null,
-        2
-      ),
+      catalog: summary,
+      skus: gateResults(skus.slice(0, params.limit), tier),
+      showing: Math.min(params.limit, skus.length),
     },
-  ];
-
-  if (tier === "free") {
-    content.push(freeTierNote("Full vendor catalog with all SKU-level pricing"));
-  }
-
-  return { content };
+    "This vendor's full price list"
+  );
 }
