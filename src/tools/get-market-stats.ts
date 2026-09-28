@@ -27,7 +27,7 @@ export async function handleGetMarketStats(
   const skuFilters = ["normalized_price=gt.0"];
   if (params.modality) skuFilters.push(`modality=ilike.*${enc(params.modality)}*`);
 
-  const [gate, vendors, skus, indexes] = await Promise.all([
+  const [gate, vendors, skus, indexes, registry] = await Promise.all([
     getActiveDate(),
     queryAll<Record<string, any>>("vendor_registry", [], {
       select: "vendor_id,vendor_type,country,region,status",
@@ -38,7 +38,12 @@ export async function handleGetMarketStats(
       order: "sku_id.asc",
     }),
     loadPublishedIndexes(),
+    queryAll<{ model_id: string; canonical_model_id: string | null }>("model_registry", [], {
+      select: "model_id,canonical_model_id",
+      order: "model_id.asc",
+    }),
   ]);
+  const anchorBy = new Map(registry.map((m) => [m.model_id, m.canonical_model_id || m.model_id]));
 
   const active = vendors.filter((v) => !v.status || String(v.status).toLowerCase() === "active");
   const vendorsByChannel: Record<string, number> = {};
@@ -71,7 +76,7 @@ export async function handleGetMarketStats(
         max: prices[prices.length - 1],
       };
     })
-    .filter((g) => g.skus >= 5)
+    .filter((g) => g.skus >= 20)
     .sort((a, b) => b.skus - a.skus);
 
   const modalities: Record<string, number> = {};
@@ -83,13 +88,13 @@ export async function handleGetMarketStats(
       active_vendors: active.length,
       vendors_by_channel: vendorsByChannel,
       countries: new Set(active.map((v) => v.country).filter(Boolean)).size,
-      models: new Set(skus.map((s) => s.model_id)).size,
+      models: new Set(skus.map((s) => anchorBy.get(s.model_id) || s.model_id)).size,
       priced_skus: skus.length,
       published_indexes: indexes.length,
     },
     skus_by_modality: modalities,
     price_distribution: distribution,
-    note: "Prices are in each group's own unit (per 1,000 tokens for token models). Groups with fewer than five SKUs are left out.",
+    note: "Prices are in each group's own unit (per 1,000 tokens for token models). Groups with fewer than 20 SKUs are left out.",
   };
 
   if (tier === "paid") {

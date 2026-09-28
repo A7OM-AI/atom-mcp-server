@@ -7,7 +7,7 @@
 
 import { z } from "zod";
 import { enc, queryAll } from "../supabase.js";
-import { CHANNEL_LABELS, UPGRADE_MESSAGE } from "../config.js";
+import { CHANNEL_LABELS, TIER_LABELS, UPGRADE_MESSAGE } from "../config.js";
 import { errorResult, normIndexCode, respond } from "../util.js";
 import type { Tier } from "../types.js";
 
@@ -56,7 +56,7 @@ export async function handleGetIndexConstituents(
     vendors: new Set(rows.map((r) => r.vendor_name)).size,
     skus_by_channel: countBy(rows, "vendor_type", channel),
     models_by_origin: countBy(models, "creator_country"),
-    models_by_tier: countBy(models, "tier"),
+    models_by_tier: countBy(models, "tier", (v) => TIER_LABELS[v] || v),
     models_by_license: countBy(models, "license_class"),
     reasoning_models: models.filter((m) => m.is_reasoning).length,
   };
@@ -86,7 +86,7 @@ export async function handleGetIndexConstituents(
         anchor_model_id: id,
         model: r.model_name,
         origin: r.creator_country,
-        tier: r.tier,
+        tier: r.tier ? TIER_LABELS[r.tier] || r.tier : null,
         license: r.license_class,
         reasoning: r.is_reasoning,
         vendors: new Set<string>(),

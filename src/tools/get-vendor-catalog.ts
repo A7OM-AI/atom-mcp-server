@@ -57,8 +57,8 @@ export async function handleGetVendorCatalog(params: z.infer<z.ZodObject<typeof 
     tier,
     {
       catalog: summary,
-      skus: gateResults(skus.slice(0, params.limit), tier),
-      showing: Math.min(params.limit, skus.length),
+      skus: tier === "paid" ? skus.slice(0, params.limit) : gateResults(skus, tier),
+      showing: tier === "paid" ? Math.min(params.limit, skus.length) : 0,
     },
     "This vendor's full price list"
   );

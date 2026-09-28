@@ -37,6 +37,13 @@ export const CHANNEL_LABELS: Record<string, string> = {
   NCL: "Neocloud",
 };
 
+/** Published tier names for the tier codes stored in model_registry.tier. */
+export const TIER_LABELS: Record<string, string> = {
+  FLG: "Flagship", FTR: "Flagship",
+  COR: "Core", MID: "Core",
+  CMP: "Compact", BDG: "Compact",
+};
+
 /** Market KPI definitions, keyed by kpi_market_snapshot.kpi_code (methodology section 4.2). */
 export const MARKET_KPIS: Record<string, { label: string; group: string; definition: string }> = {
   output_premium: { label: "Output premium", group: "Price structure",
