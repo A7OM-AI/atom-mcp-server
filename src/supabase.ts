@@ -6,19 +6,29 @@
 // ============================================================
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || "";
+// Server-side key. The service role key is set only in the Railway
+// environment and never leaves the server; the anon key is a fallback
+// for local installs. Access is read-only (GET/RPC) and tier gating
+// is enforced in this server before anything is returned.
+const SUPABASE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || "";
 
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+if (!SUPABASE_URL || !SUPABASE_KEY) {
   console.error(
-    "ATOM MCP: SUPABASE_URL and SUPABASE_ANON_KEY must be set in environment variables."
+    "MCP: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_ANON_KEY) must be set."
   );
+}
+
+/** URL-encode a user-supplied filter value so it cannot add PostgREST params. */
+export function enc(value: string): string {
+  return encodeURIComponent(String(value).trim()).replace(/%2A/g, "*");
 }
 
 const BASE = `${SUPABASE_URL}/rest/v1`;
 
 const headers: Record<string, string> = {
-  apikey: SUPABASE_ANON_KEY,
-  Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+  apikey: SUPABASE_KEY,
+  Authorization: `Bearer ${SUPABASE_KEY}`,
   "Content-Type": "application/json",
   Prefer: "return=representation",
 };

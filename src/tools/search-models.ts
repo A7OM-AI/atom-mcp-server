@@ -4,7 +4,7 @@
 // ============================================================
 
 import { z } from "zod";
-import { queryTable } from "../supabase.js";
+import { enc, queryTable } from "../supabase.js";
 import { gateResults, buildFreeTierSummary, freeTierNote } from "../auth.js";
 import type { Tier, SkuIndex, ModelRegistry } from "../types.js";
 
@@ -67,9 +67,9 @@ export async function handleSearchModels(
 ) {
   // Build SKU-level filters
   const skuFilters: string[] = [];
-  if (params.modality) skuFilters.push(`modality=ilike.*${params.modality}*`);
-  if (params.vendor) skuFilters.push(`vendor_name=ilike.*${params.vendor}*`);
-  if (params.direction) skuFilters.push(`direction=eq.${params.direction}`);
+  if (params.modality) skuFilters.push(`modality=ilike.*${enc(params.modality)}*`);
+  if (params.vendor) skuFilters.push(`vendor_name=ilike.*${enc(params.vendor)}*`);
+  if (params.direction) skuFilters.push(`direction=eq.${enc(params.direction)}`);
   if (params.max_price !== undefined)
     skuFilters.push(`normalized_price=lte.${params.max_price}`);
   skuFilters.push("normalized_price=gt.0");
@@ -86,8 +86,8 @@ export async function handleSearchModels(
   // Apply model-level filters if needed
   if (params.creator || params.model_family || params.open_source || params.min_context_window) {
     const modelFilters: string[] = [];
-    if (params.creator) modelFilters.push(`creator=ilike.*${params.creator}*`);
-    if (params.model_family) modelFilters.push(`model_family=ilike.*${params.model_family}*`);
+    if (params.creator) modelFilters.push(`creator=ilike.*${enc(params.creator)}*`);
+    if (params.model_family) modelFilters.push(`model_family=ilike.*${enc(params.model_family)}*`);
     if (params.open_source !== undefined) {
       const boolVal = params.open_source === "true";
       modelFilters.push(`open_source=is.${boolVal}`);

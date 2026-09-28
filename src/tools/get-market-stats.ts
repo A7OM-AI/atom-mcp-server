@@ -4,7 +4,7 @@
 // ============================================================
 
 import { z } from "zod";
-import { queryTable, queryView } from "../supabase.js";
+import { enc, queryTable, queryView } from "../supabase.js";
 import { freeTierNote } from "../auth.js";
 import type { Tier, SummaryStatRow } from "../types.js";
 
@@ -30,7 +30,7 @@ export async function handleGetMarketStats(
 
   // Get price distribution for the requested modality
   const priceFilters: string[] = [];
-  if (params.modality) priceFilters.push(`modality=ilike.*${params.modality}*`);
+  if (params.modality) priceFilters.push(`modality=ilike.*${enc(params.modality)}*`);
   priceFilters.push("normalized_price=gt.0");
 
   const skus = await queryTable<Record<string, unknown>>("sku_index", priceFilters, {

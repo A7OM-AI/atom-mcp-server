@@ -4,7 +4,7 @@
 // ============================================================
 
 import { z } from "zod";
-import { queryTable } from "../supabase.js";
+import { enc, queryTable } from "../supabase.js";
 import { gateResults, freeTierNote } from "../auth.js";
 import type { Tier, VendorRegistry } from "../types.js";
 
@@ -35,7 +35,7 @@ export async function handleGetVendorCatalog(
 ) {
   // Get vendor metadata
   const vendors = await queryTable<VendorRegistry>("vendor_registry", [
-    `vendor_name=ilike.*${params.vendor}*`,
+    `vendor_name=ilike.*${enc(params.vendor)}*`,
   ]);
 
   if (vendors.length === 0) {
@@ -56,10 +56,10 @@ export async function handleGetVendorCatalog(
 
   // Get all SKUs for this vendor
   const skuFilters: string[] = [
-    `vendor_name=ilike.*${params.vendor}*`,
+    `vendor_name=ilike.*${enc(params.vendor)}*`,
   ];
-  if (params.modality) skuFilters.push(`modality=ilike.*${params.modality}*`);
-  if (params.direction) skuFilters.push(`direction=eq.${params.direction}`);
+  if (params.modality) skuFilters.push(`modality=ilike.*${enc(params.modality)}*`);
+  if (params.direction) skuFilters.push(`direction=eq.${enc(params.direction)}`);
 
   const skus = await queryTable<Record<string, unknown>>("sku_index", skuFilters, {
     select: "sku_id,vendor_name,model_name,modality,modality_subtype,direction,normalized_price,normalized_price_unit,billing_method",

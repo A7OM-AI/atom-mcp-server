@@ -4,7 +4,7 @@
 // ============================================================
 
 import { z } from "zod";
-import { queryTable } from "../supabase.js";
+import { enc, queryTable } from "../supabase.js";
 import { gateResults, freeTierNote } from "../auth.js";
 import type { Tier, ModelRegistry, SkuIndex } from "../types.js";
 
@@ -20,7 +20,7 @@ export async function handleGetModelDetail(
 ) {
   // Find model in registry (fuzzy match)
   const models = await queryTable<ModelRegistry>("model_registry", [
-    `model_name=ilike.*${params.model_name}*`,
+    `model_name=ilike.*${enc(params.model_name)}*`,
   ], {
     limit: 5,
   });
@@ -43,7 +43,7 @@ export async function handleGetModelDetail(
 
   // Get all SKUs for this model across vendors
   const skus = await queryTable<SkuIndex>("sku_index", [
-    `model_id=eq.${model.model_id}`,
+    `model_id=eq.${enc(model.model_id)}`,
   ], {
     select: "sku_id,vendor_name,model_name,modality,modality_subtype,direction,normalized_price,normalized_price_unit,billing_method",
     order: "normalized_price.asc",

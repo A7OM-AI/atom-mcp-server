@@ -4,7 +4,7 @@
 // ============================================================
 
 import { z } from "zod";
-import { queryTable } from "../supabase.js";
+import { enc, queryTable } from "../supabase.js";
 import { gateResults, freeTierNote } from "../auth.js";
 import type { Tier, SkuIndex } from "../types.js";
 
@@ -53,9 +53,9 @@ export async function handleComparePrices(
   }
 
   const filters: string[] = [];
-  if (params.model_name) filters.push(`model_name=ilike.*${params.model_name}*`);
-  if (params.direction) filters.push(`direction=eq.${params.direction}`);
-  if (params.modality) filters.push(`modality=ilike.*${params.modality}*`);
+  if (params.model_name) filters.push(`model_name=ilike.*${enc(params.model_name)}*`);
+  if (params.direction) filters.push(`direction=eq.${enc(params.direction)}`);
+  if (params.modality) filters.push(`modality=ilike.*${enc(params.modality)}*`);
   filters.push("normalized_price=gt.0");
 
   let skus = await queryTable<SkuIndex>("sku_index", filters, {
@@ -67,7 +67,7 @@ export async function handleComparePrices(
   // If model_family was provided, filter by model registry
   if (params.model_family && !params.model_name) {
     const models = await queryTable<{ model_id: string }>("model_registry", [
-      `model_family=ilike.*${params.model_family}*`,
+      `model_family=ilike.*${enc(params.model_family)}*`,
     ], {
       select: "model_id",
     });
@@ -75,8 +75,8 @@ export async function handleComparePrices(
 
     // Re-query SKUs without model_name filter
     const familyFilters: string[] = [];
-    if (params.direction) familyFilters.push(`direction=eq.${params.direction}`);
-    if (params.modality) familyFilters.push(`modality=ilike.*${params.modality}*`);
+    if (params.direction) familyFilters.push(`direction=eq.${enc(params.direction)}`);
+    if (params.modality) familyFilters.push(`modality=ilike.*${enc(params.modality)}*`);
     familyFilters.push("normalized_price=gt.0");
 
     const allSkus = await queryTable<SkuIndex>("sku_index", familyFilters, {

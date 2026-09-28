@@ -4,7 +4,7 @@
 // ============================================================
 
 import { z } from "zod";
-import { queryTable } from "../supabase.js";
+import { enc, queryTable } from "../supabase.js";
 import type { Tier, VendorRegistry } from "../types.js";
 
 export const listVendorsSchema = {
@@ -23,8 +23,8 @@ export async function handleListVendors(
   tier: Tier
 ) {
   const filters: string[] = [];
-  if (params.region) filters.push(`region=ilike.*${params.region}*`);
-  if (params.country) filters.push(`country=ilike.*${params.country}*`);
+  if (params.region) filters.push(`region=ilike.*${enc(params.region)}*`);
+  if (params.country) filters.push(`country=ilike.*${enc(params.country)}*`);
 
   const vendors = await queryTable<VendorRegistry>("vendor_registry", filters, {
     order: "vendor_name.asc",
