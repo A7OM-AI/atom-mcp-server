@@ -83,7 +83,7 @@ Settings → Connectors → Add custom connector
 
 ```text
 Name: Attic Standard
-URL:  https://atom-mcp-server-production.up.railway.app/mcp
+URL:  https://mcp.atticstandard.com/mcp
 ```
 
 ### Claude Desktop, Cursor, Windsurf (config file)
@@ -92,7 +92,7 @@ URL:  https://atom-mcp-server-production.up.railway.app/mcp
 {
   "mcpServers": {
     "attic-standard": {
-      "url": "https://atom-mcp-server-production.up.railway.app/mcp"
+      "url": "https://mcp.atticstandard.com/mcp"
     }
   }
 }
@@ -105,11 +105,13 @@ If your client does not accept a remote URL, use the proxy:
   "mcpServers": {
     "attic-standard": {
       "command": "npx",
-      "args": ["mcp-remote", "https://atom-mcp-server-production.up.railway.app/mcp"]
+      "args": ["mcp-remote", "https://mcp.atticstandard.com/mcp"]
     }
   }
 }
 ```
+
+Connections made with the earlier address, `https://atom-mcp-server-production.up.railway.app/mcp`, keep working.
 
 ### PRO key
 

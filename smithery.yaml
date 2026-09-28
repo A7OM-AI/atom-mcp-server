@@ -1,6 +1,6 @@
 # Smithery.ai configuration
 # https://smithery.ai/docs/build/project-config/smithery-yaml
-# The hosted server (https://atom-mcp-server-production.up.railway.app/mcp)
+# The hosted server (https://mcp.atticstandard.com/mcp)
 # is the supported way to connect; this local mode is for self-hosting.
 
 runtime: typescript

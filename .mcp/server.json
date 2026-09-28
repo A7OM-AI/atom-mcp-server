@@ -22,6 +22,10 @@
   "remotes": [
     {
       "type": "streamable-http",
+      "url": "https://mcp.atticstandard.com/mcp"
+    },
+    {
+      "type": "streamable-http",
       "url": "https://atom-mcp-server-production.up.railway.app/mcp"
     }
   ]
