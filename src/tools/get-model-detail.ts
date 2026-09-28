@@ -6,7 +6,7 @@
 
 import { z } from "zod";
 import { enc, inList, queryAll, queryTable } from "../supabase.js";
-import { CHANNEL_LABELS, TIER_LABELS } from "../config.js";
+import { CHANNEL_LABELS, LICENSE_LABELS, TIER_LABELS } from "../config.js";
 import { anchorOf, dirKey, errorResult, expandAnchors, findModels, MODEL_SELECT, respond, vendorLookup } from "../util.js";
 import type { Tier, ModelRegistry } from "../types.js";
 
@@ -46,7 +46,7 @@ export async function handleGetModelDetail(params: z.infer<z.ZodObject<typeof ge
     origin: m.creator_country,
     family: m.model_family,
     tier: m.tier ? TIER_LABELS[m.tier] || m.tier : null,
-    license: m.license_class ?? m.license_type,
+    license: m.license_class ? LICENSE_LABELS[m.license_class] || m.license_class : m.license_type,
     open_weights: m.open_source,
     reasoning: m.is_reasoning,
     task: m.task_category,

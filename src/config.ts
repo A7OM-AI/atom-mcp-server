@@ -44,6 +44,14 @@ export const TIER_LABELS: Record<string, string> = {
   CMP: "Compact", BDG: "Compact",
 };
 
+/** Published names for model_registry.license_class. */
+export const LICENSE_LABELS: Record<string, string> = {
+  open: "Open weights, permissive license",
+  "open-weight": "Open weights, restricted license",
+  "non-commercial": "Open weights, non-commercial license",
+  proprietary: "Proprietary",
+};
+
 /** Market KPI definitions, keyed by kpi_market_snapshot.kpi_code (methodology section 4.2). */
 export const MARKET_KPIS: Record<string, { label: string; group: string; definition: string }> = {
   output_premium: { label: "Output premium", group: "Price structure",
