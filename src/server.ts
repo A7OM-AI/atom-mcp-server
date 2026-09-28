@@ -8,7 +8,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { resolveTier } from "./auth.js";
-import { SERVER_NAME, SERVER_VERSION, PRO_NAME, PRO_PRICE, MCP_PAGE } from "./config.js";
+import { SERVER_NAME, SERVER_VERSION, PRO_NAME, PRO_PRICE, MCP_PAGE, SITE, PUBLIC_URL, ICON_PATH } from "./config.js";
 import type { Tier } from "./types.js";
 
 import { getIndexBenchmarksSchema, handleGetIndexBenchmarks } from "./tools/get-index-benchmarks.js";
@@ -44,7 +44,13 @@ const UNITS = "Token prices are per 1,000 tokens; other modalities use their own
 type Handler = (params: any, tier: Tier) => Promise<any>;
 
 export function createServer(): McpServer {
-  const server = new McpServer({ name: SERVER_NAME, version: SERVER_VERSION });
+  const server = new McpServer({
+    name: SERVER_NAME,
+    title: "Attic Standard MCP",
+    version: SERVER_VERSION,
+    websiteUrl: SITE,
+    icons: [{ src: `${PUBLIC_URL}${ICON_PATH}`, mimeType: "image/png", sizes: ["256x256"] }],
+  });
 
   const add = (name: string, title: string, description: string, schema: Record<string, z.ZodTypeAny>, handler: Handler) => {
     server.registerTool(
