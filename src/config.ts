@@ -17,9 +17,8 @@ export const SITE = "https://atticstandard.com";
 export const MCP_PAGE = `${SITE}/mcp`;
 export const METHODOLOGY_PAGE = `${SITE}/methodology`;
 
-/** Public icon served by this server; the source image is the site's own favicon. */
+/** Public icon served by this server (assets/icon.png). */
 export const ICON_PATH = "/favicon.png";
-export const ICON_SOURCE = "https://www.google.com/s2/favicons?domain=atticstandard.com&sz=256";
 export const PUBLIC_URL = "https://mcp.atticstandard.com";
 
 export const UPGRADE_LABEL = `[${PRO_NAME}]`;

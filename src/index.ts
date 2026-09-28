@@ -8,8 +8,10 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import express from "express";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { createServer } from "./server.js";
-import { SERVER_NAME, SERVER_VERSION, ICON_PATH, ICON_SOURCE, SITE } from "./config.js";
+import { SERVER_NAME, SERVER_VERSION, ICON_PATH, SITE } from "./config.js";
 // ----------------------------------------------------------
 // stdio transport (for Cursor, Claude Desktop, etc.)
 // ----------------------------------------------------------
@@ -35,20 +37,17 @@ async function runHTTP(): Promise<void> {
     next();
   });
 
-  // Icon: the site's favicon, fetched once and served from this host so
-  // MCP clients that look for a favicon on the server address find one.
+  // Icon: the Attic Standard mark, shipped with the server so MCP
+  // clients that look for a favicon on the server address find one.
   let icon: Buffer | null = null;
-  const sendIcon = async (_req: express.Request, res: express.Response) => {
-    try {
-      if (!icon) {
-        const r = await fetch(ICON_SOURCE);
-        if (!r.ok) throw new Error(`icon ${r.status}`);
-        icon = Buffer.from(await r.arrayBuffer());
-      }
-      res.set("Content-Type", "image/png").set("Cache-Control", "public, max-age=86400").send(icon);
-    } catch {
-      res.redirect(302, `${SITE}/favicon.ico`);
-    }
+  try {
+    icon = readFileSync(join(process.cwd(), "assets", "icon.png"));
+  } catch (err) {
+    console.error("MCP: icon file not found:", err);
+  }
+  const sendIcon = (_req: express.Request, res: express.Response) => {
+    if (!icon) return res.redirect(302, `${SITE}/favicon.ico`);
+    res.set("Content-Type", "image/png").set("Cache-Control", "public, max-age=86400").send(icon);
   };
   app.get([ICON_PATH, "/favicon.ico", "/apple-touch-icon.png"], sendIcon);
 
