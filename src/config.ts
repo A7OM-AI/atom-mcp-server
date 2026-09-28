@@ -48,7 +48,7 @@ export const TIER_LABELS: Record<string, string> = {
 export const LICENSE_LABELS: Record<string, string> = {
   open: "Open weights, permissive license",
   "open-weight": "Open weights, restricted license",
-  "non-commercial": "Open weights, non-commercial license",
+  "non-commercial": "Non-commercial license",
   proprietary: "Proprietary",
 };
 
